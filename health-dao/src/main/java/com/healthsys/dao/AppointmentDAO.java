@@ -10,330 +10,206 @@ import java.util.List;
 
 public class AppointmentDAO {
 
-    public enum PaymentStatus {
-        PAID, UNPAID
-    }
-
-    // ============ 从 HealthcareModule 迁移 ============
+    // ============ 管理端搜索 ============
 
     public List<Appointment> search(String userName) {
         List<Appointment> appointments = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT a.*, u.name as user_name, p.name as package_name " +
+        StringBuilder sql = new StringBuilder(
+                "SELECT a.*, u.real_name as user_name, cg.group_name as group_name " +
                 "FROM appointments a " +
-                "LEFT JOIN users u ON a.user_id = u.id " +
-                "LEFT JOIN text_packages p ON a.package_id = p.id " +
+                "LEFT JOIN users u ON a.user_id = u.user_id " +
+                "LEFT JOIN check_groups cg ON a.group_id = cg.group_id " +
                 "WHERE 1=1");
-
-        if (userName != null && !userName.isEmpty()) {
-            sql.append(" AND u.name LIKE ?");
-        }
-
+        if (userName != null && !userName.isEmpty()) sql.append(" AND u.real_name LIKE ?");
         sql.append(" ORDER BY a.appointment_time DESC");
 
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
-
             int paramIndex = 1;
-            if (userName != null && !userName.isEmpty()) {
-                pstmt.setString(paramIndex++, "%" + userName + "%");
-            }
-
+            if (userName != null && !userName.isEmpty()) pstmt.setString(paramIndex++, "%" + userName + "%");
             try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Appointment appointment = new Appointment();
-                    appointment.setId(rs.getLong("id"));
-                    appointment.setUserId(rs.getLong("user_id"));
-                    appointment.setPackageId(rs.getLong("package_id"));
-                    appointment.setAppointmentTime(rs.getObject("appointment_time", LocalDateTime.class));
-                    appointment.setExamTime(rs.getObject("exam_time", LocalDateTime.class));
-                    appointment.setStatus(rs.getString("status"));
-                    String paymentStatus = rs.getString("payment_status");
-                    appointment.setPaymentStatus("PAID".equalsIgnoreCase(paymentStatus));
-                    appointment.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
-                    appointment.setUserName(rs.getString("user_name"));
-                    appointment.setPackageName(rs.getString("package_name"));
-
-                    appointments.add(appointment);
-                }
+                while (rs.next()) appointments.add(mapRowWithJoin(rs));
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+        } catch (SQLException e) { e.printStackTrace(); }
         return appointments;
     }
 
     public boolean add(Appointment appointment) {
-        String sql = "INSERT INTO appointments (user_id, package_id, appointment_time, exam_time, status, payment_status, created_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
+        String sql = "INSERT INTO appointments (user_id, group_id, appointment_time, exam_date, exam_time_slot, " +
+                "status, payment_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
             pstmt.setLong(1, appointment.getUserId());
-            pstmt.setLong(2, appointment.getPackageId());
+            pstmt.setLong(2, appointment.getGroupId());
             pstmt.setObject(3, appointment.getAppointmentTime());
-            pstmt.setObject(4, appointment.getExamTime());
-            pstmt.setString(5, appointment.getStatus());
-            pstmt.setBoolean(6, appointment.getPaymentStatus());
-            pstmt.setObject(7, LocalDateTime.now());
-
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        appointment.setId(generatedKeys.getLong(1));
-                    }
+            pstmt.setObject(4, appointment.getExamDate());
+            pstmt.setString(5, appointment.getExamTimeSlot());
+            pstmt.setString(6, appointment.getStatus() != null ? appointment.getStatus() : "PENDING");
+            pstmt.setBoolean(7, Boolean.TRUE.equals(appointment.getPaymentStatus()));
+            pstmt.setObject(8, LocalDateTime.now());
+            if (pstmt.executeUpdate() > 0) {
+                try (ResultSet keys = pstmt.getGeneratedKeys()) {
+                    if (keys.next()) { appointment.setAppointmentId(keys.getLong(1)); return true; }
                 }
-                return true;
             }
             return false;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
     public boolean update(Appointment appointment) {
-        String sql = "UPDATE appointments SET user_id = ?, package_id = ?, appointment_time = ?, " +
-                "exam_time = ?, status = ?, payment_status = ? WHERE id = ?";
-
+        String sql = "UPDATE appointments SET user_id=?, group_id=?, appointment_time=?, exam_date=?, " +
+                "exam_time_slot=?, status=?, payment_status=? WHERE appointment_id=?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setLong(1, appointment.getUserId());
-            pstmt.setLong(2, appointment.getPackageId());
+            pstmt.setLong(2, appointment.getGroupId());
             pstmt.setObject(3, appointment.getAppointmentTime());
-            pstmt.setObject(4, appointment.getExamTime());
-            pstmt.setString(5, appointment.getStatus());
-            pstmt.setBoolean(6, appointment.getPaymentStatus());
-            pstmt.setLong(7, appointment.getId());
-
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+            pstmt.setObject(4, appointment.getExamDate());
+            pstmt.setString(5, appointment.getExamTimeSlot());
+            pstmt.setString(6, appointment.getStatus());
+            pstmt.setBoolean(7, Boolean.TRUE.equals(appointment.getPaymentStatus()));
+            pstmt.setLong(8, appointment.getAppointmentId());
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
     public boolean delete(Long id) {
-        String sql = "DELETE FROM appointments WHERE id = ?";
-
+        String sql = "DELETE FROM appointments WHERE appointment_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setLong(1, id);
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
     public List<Appointment> getAll() {
         List<Appointment> appointments = new ArrayList<>();
-        String sql = "SELECT a.*, u.name as user_name, p.name as package_name " +
+        String sql = "SELECT a.*, u.real_name as user_name, cg.group_name as group_name " +
                 "FROM appointments a " +
-                "LEFT JOIN users u ON a.user_id = u.id " +
-                "LEFT JOIN test_packages p ON a.package_id = p.id " +
+                "LEFT JOIN users u ON a.user_id = u.user_id " +
+                "LEFT JOIN check_groups cg ON a.group_id = cg.group_id " +
                 "ORDER BY a.appointment_time DESC";
-
         try (Connection conn = DbUtil.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                Appointment appointment = new Appointment();
-                appointment.setId(rs.getLong("id"));
-                appointment.setUserId(rs.getLong("user_id"));
-                appointment.setPackageId(rs.getLong("package_id"));
-                appointment.setAppointmentTime(rs.getObject("appointment_time", LocalDateTime.class));
-                appointment.setExamTime(rs.getObject("exam_time", LocalDateTime.class));
-                appointment.setStatus(rs.getString("status"));
-                String paymentStatus = rs.getString("payment_status");
-                appointment.setPaymentStatus("PAID".equalsIgnoreCase(paymentStatus));
-                appointment.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
-                appointment.setUserName(rs.getString("user_name"));
-                appointment.setPackageName(rs.getString("package_name"));
-
-                appointments.add(appointment);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+            while (rs.next()) appointments.add(mapRowWithJoin(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
         return appointments;
     }
 
     public Appointment getById(Long id) {
-        String sql = "SELECT a.*, u.name as user_name, p.name as package_name " +
+        String sql = "SELECT a.*, u.real_name as user_name, cg.group_name as group_name " +
                 "FROM appointments a " +
-                "LEFT JOIN users u ON a.user_id = u.id " +
-                "LEFT JOIN packages p ON a.package_id = p.id " +
-                "WHERE a.id = ?";
-
+                "LEFT JOIN users u ON a.user_id = u.user_id " +
+                "LEFT JOIN check_groups cg ON a.group_id = cg.group_id " +
+                "WHERE a.appointment_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setLong(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    Appointment appointment = new Appointment();
-                    appointment.setId(rs.getLong("id"));
-                    appointment.setUserId(rs.getLong("user_id"));
-                    appointment.setPackageId(rs.getLong("package_id"));
-                    appointment.setAppointmentTime(rs.getObject("appointment_time", LocalDateTime.class));
-                    appointment.setExamTime(rs.getObject("exam_time", LocalDateTime.class));
-                    appointment.setStatus(rs.getString("status"));
-                    String paymentStatus = rs.getString("payment_status");
-                    appointment.setPaymentStatus("PAID".equalsIgnoreCase(paymentStatus));
-                    appointment.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
-                    appointment.setUserName(rs.getString("user_name"));
-                    appointment.setPackageName(rs.getString("package_name"));
-
-                    return appointment;
-                }
+                if (rs.next()) return mapRowWithJoin(rs);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
 
-    // ============ 从 UserModule 迁移 ============
+    // ============ 用户端方法 ============
 
     public Appointment getAppointmentById(Long appointmentId) {
-        String sql = "SELECT * FROM appointments WHERE id = ?";
+        String sql = "SELECT * FROM appointments WHERE appointment_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, appointmentId);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                Appointment appointment = new Appointment(
-                        rs.getLong("user_id"),
-                        rs.getObject("package_id", Long.class),
-                        rs.getObject("appointment_time", LocalDateTime.class)
-                );
-                appointment.setId(rs.getLong("id"));
-                appointment.setStatus(rs.getString("status"));
-                appointment.setPaymentStatus(rs.getBoolean("payment_status"));
-
-                if (rs.getTimestamp("exam_time") != null) {
-                    appointment.setExamTime(rs.getObject("exam_time", LocalDateTime.class));
-                }
-
-                return appointment;
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return mapRow(rs);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
 
     public boolean createAppointment(Appointment appointment) {
-        String sql = "INSERT INTO appointments (user_id, package_id, appointment_time, status, payment_status) " +
-                "VALUES (?, ?, ?, ?, ?)";
-
+        String sql = "INSERT INTO appointments (user_id, group_id, appointment_time, exam_date, exam_time_slot, status, payment_status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
             stmt.setLong(1, appointment.getUserId());
-            stmt.setObject(2, appointment.getPackageId(), Types.BIGINT);
+            stmt.setObject(2, appointment.getGroupId(), Types.BIGINT);
             stmt.setObject(3, appointment.getAppointmentTime());
-            stmt.setString(4, appointment.getStatus());
-            stmt.setBoolean(5, Boolean.TRUE.equals(appointment.getPaymentStatus()));
-
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
+            stmt.setObject(4, appointment.getExamDate());
+            stmt.setString(5, appointment.getExamTimeSlot());
+            stmt.setString(6, appointment.getStatus() != null ? appointment.getStatus() : "PENDING");
+            stmt.setBoolean(7, Boolean.TRUE.equals(appointment.getPaymentStatus()));
+            if (stmt.executeUpdate() > 0) {
                 try (ResultSet rs = stmt.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        appointment.setId(rs.getLong(1));
-                        return true;
-                    }
+                    if (rs.next()) { appointment.setAppointmentId(rs.getLong(1)); return true; }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
         return false;
     }
 
     public List<Appointment> getUserAppointments(long userId) {
         List<Appointment> appointments = new ArrayList<>();
         String sql = "SELECT * FROM appointments WHERE user_id = ? ORDER BY appointment_time DESC";
-
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, userId);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                Appointment appointment = new Appointment(
-                        rs.getLong("user_id"),
-                        rs.getObject("package_id") != null ? rs.getLong("package_id") : null,
-                        rs.getObject("appointment_time", LocalDateTime.class)
-                );
-                appointment.setId(rs.getLong("id"));
-                appointment.setStatus(rs.getString("status"));
-                appointment.setPaymentStatus(rs.getBoolean("payment_status"));
-
-                if (rs.getTimestamp("exam_time") != null) {
-                    appointment.setExamTime(rs.getObject("exam_time", LocalDateTime.class));
-                }
-
-                appointments.add(appointment);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) appointments.add(mapRow(rs));
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
         return appointments;
     }
 
     public boolean cancelAppointment(long appointmentId) {
-        String sql = "UPDATE appointments SET status = 'CANCELLED' WHERE id = ?";
-
+        String sql = "UPDATE appointments SET status = 'CANCELLED' WHERE appointment_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, appointmentId);
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
     public boolean completeAppointment(long appointmentId) {
-        String sql = "UPDATE appointments SET status = 'COMPLETED', exam_time = NOW() WHERE id = ?";
-
+        String sql = "UPDATE appointments SET status = 'COMPLETED' WHERE appointment_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setLong(1, appointmentId);
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
     public boolean updatePaymentStatus(Long appointmentId, boolean paid) {
-        String sql = "UPDATE appointments SET payment_status = ? WHERE id = ?";
+        String sql = "UPDATE appointments SET payment_status = ? WHERE appointment_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setBoolean(1, paid);
             stmt.setLong(2, appointmentId);
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+
+    // ============ Helpers ============
+
+    private Appointment mapRow(ResultSet rs) throws SQLException {
+        Appointment app = new Appointment(
+                rs.getLong("user_id"),
+                rs.getObject("group_id", Long.class),
+                rs.getObject("appointment_time", LocalDateTime.class));
+        app.setAppointmentId(rs.getLong("appointment_id"));
+        app.setExamDate(rs.getObject("exam_date", java.time.LocalDate.class));
+        app.setExamTimeSlot(rs.getString("exam_time_slot"));
+        app.setStatus(rs.getString("status"));
+        app.setPaymentStatus(rs.getBoolean("payment_status"));
+        app.setCreatedAt(rs.getObject("created_at", LocalDateTime.class));
+        app.setUpdatedAt(rs.getObject("updated_at", LocalDateTime.class));
+        return app;
+    }
+
+    private Appointment mapRowWithJoin(ResultSet rs) throws SQLException {
+        Appointment app = mapRow(rs);
+        try { app.setUserName(rs.getString("user_name")); } catch (SQLException ignored) {}
+        try { app.setGroupName(rs.getString("group_name")); } catch (SQLException ignored) {}
+        return app;
     }
 }

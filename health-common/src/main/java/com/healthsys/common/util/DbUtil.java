@@ -1,4 +1,4 @@
-﻿package com.healthsys.common.util;
+package com.healthsys.common.util;
 
 import java.io.IOException;
 import java.io.InputStream;

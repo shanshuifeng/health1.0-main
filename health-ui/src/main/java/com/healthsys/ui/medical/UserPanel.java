@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.Users;
 import com.healthsys.ui.medical.UserDialog;
@@ -194,8 +194,8 @@ public class UserPanel extends CrudPanel<Users> {
                 case 0: return user.getId();
                 case 1: return user.getPhone();
                 case 2: return user.getName();
-                case 3: return user.getGender();
-                case 4: return user.getRole();
+                case 3: return user.getGenderDisplay();
+                case 4: return "—";
                 case 5: return user.getIdNumber();
                 case 6: return user.getCreatedAt();
                 default: return null;

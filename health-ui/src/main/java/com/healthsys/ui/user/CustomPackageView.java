@@ -1,6 +1,6 @@
-﻿package com.healthsys.common.view.custompackage;
+package com.healthsys.ui.user;
 
-import com.healthsys.service.AppointmentController;
+import com.healthsys.service.AppointmentService;
 import com.healthsys.common.entity.CheckItem;
 import com.healthsys.common.entity.CheckItemGroup;
 import com.healthsys.common.entity.Users;
@@ -14,7 +14,7 @@ import java.util.List;
 public class CustomPackageView {
     private JPanel customPackagePanel;
     private Users currentUser;
-    private AppointmentController controller;
+    private AppointmentService controller;
     private DefaultListModel<CheckItem> availableModel;
     private DefaultListModel<CheckItem> selectedModel;
     private JList<CheckItem> availableList;
@@ -26,7 +26,7 @@ public class CustomPackageView {
 
     public CustomPackageView(Users currentUser) {
         this.currentUser = currentUser;
-        this.controller = new AppointmentController();
+        this.controller = new AppointmentService();
         initializeUI();
     }
 
@@ -36,7 +36,7 @@ public class CustomPackageView {
 
         // 标题面板
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JLabel titleLabel = new JLabel("自定义体检套餐");
+        JLabel titleLabel = new JLabel("自定义检查组");
         titleLabel.setFont(new Font("微软雅黑", Font.BOLD, 24));
         titleLabel.setForeground(new Color(70, 104, 197));
         titlePanel.add(titleLabel);
@@ -44,8 +44,8 @@ public class CustomPackageView {
         // 说明面板
         JPanel descriptionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JLabel descriptionLabel = new JLabel("<html><div style='text-align: center; width: 500px;'>" +
-                "创建符合您个人需求的自定义体检套餐<br>" +
-                "从可用的检查项目中选择，组合成专属于您的套餐</div></html>");
+                "创建符合您个人需求的自定义检查组<br>" +
+                "从可用的检查项目中选择，组合成专属于您的检查组</div></html>");
         descriptionLabel.setFont(new Font("微软雅黑", Font.PLAIN, 16));
         descriptionPanel.add(descriptionLabel);
 
@@ -109,14 +109,14 @@ public class CustomPackageView {
 
         // 输入面板
         JPanel inputPanel = new JPanel(new GridLayout(0, 2, 10, 10));
-        inputPanel.setBorder(BorderFactory.createTitledBorder("套餐信息"));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("检查组信息"));
 
         nameField = new JTextField();
         descArea = new JTextArea(3, 20);
         priceField = new JTextField();
         priceField.setEditable(false); // 价格自动计算，不可编辑
 
-        inputPanel.add(new JLabel("套餐名称:"));
+        inputPanel.add(new JLabel("检查组名称:"));
         inputPanel.add(nameField);
         inputPanel.add(new JLabel("描述:"));
         inputPanel.add(new JScrollPane(descArea));
@@ -124,9 +124,9 @@ public class CustomPackageView {
         inputPanel.add(priceField);
 
         // 提交按钮
-        JButton submitBtn = new JButton("创建自定义套餐");
+        JButton submitBtn = new JButton("创建检查组");
         submitBtn.setFont(new Font("微软雅黑", Font.BOLD, 16));
-        submitBtn.addActionListener(this::createCustomPackage);
+        submitBtn.addActionListener(this::createCustomGroup);
 
         // 组装列表部分
         JPanel listsPanel = new JPanel(new GridLayout(1, 2, 10, 0));
@@ -182,10 +182,10 @@ public class CustomPackageView {
         priceField.setText(String.format("%.2f", totalPrice));
     }
 
-    private void createCustomPackage(ActionEvent e) {
+    private void createCustomGroup(ActionEvent e) {
         // 验证输入
         if (nameField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(customPackagePanel, "请输入套餐名称", "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(customPackagePanel, "请输入检查组名称", "错误", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -201,10 +201,10 @@ public class CustomPackageView {
             totalPrice += test.getPrice();
         }
 
-        CheckItemGroup newPackage = new CheckItemGroup();
-        newPackage.setName(nameField.getText());
-        newPackage.setDescription(descArea.getText());
-        newPackage.setPrice(totalPrice);
+        CheckItemGroup newGroup = new CheckItemGroup();
+        newGroup.setName(nameField.getText());
+        newGroup.setDescription(descArea.getText());
+        newGroup.setPrice(totalPrice);
 
         List<Long> selectedTestIds = new ArrayList<>();
         for (int i = 0; i < selectedModel.getSize(); i++) {
@@ -212,8 +212,8 @@ public class CustomPackageView {
             selectedTestIds.add(test.getId());
         }
 
-        if (controller.createCustomPackage(newPackage, selectedTestIds)) {
-            JOptionPane.showMessageDialog(customPackagePanel, "套餐创建成功！");
+        if (controller.createCustomGroup(newGroup, selectedTestIds)) {
+            JOptionPane.showMessageDialog(customPackagePanel, "检查组创建成功！");
             // 清空表单
             nameField.setText("");
             descArea.setText("");
@@ -226,11 +226,8 @@ public class CustomPackageView {
             allTests.forEach(availableModel::addElement);
 
             calculateTotalPrice();
-
-            // 通知预约视图刷新
-            controller.notifyAppointmentViewRefresh();
         } else {
-            JOptionPane.showMessageDialog(customPackagePanel, "套餐创建失败！", "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(customPackagePanel, "检查组创建失败！", "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
 

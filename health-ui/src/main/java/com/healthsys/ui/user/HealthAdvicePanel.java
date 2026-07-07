@@ -1,11 +1,11 @@
-﻿package com.healthsys.common.view;
+package com.healthsys.ui.user;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 import com.healthsys.common.entity.ExamRecord;
 import com.healthsys.common.entity.CheckItem;
-import com.healthsys.service.MedicalTestController;
+import com.healthsys.dao.CheckItemDAO;
 
 
 public class HealthAdvicePanel extends JPanel {
@@ -22,7 +22,7 @@ public class HealthAdvicePanel extends JPanel {
 
         for (ExamRecord record : records) {
             Long testId = record.getTestId();
-            CheckItem checkItem = new MedicalTestController().getTestById(testId);
+            CheckItem checkItem = new CheckItemDAO().getById(testId);
             String testName = checkItem != null ? checkItem.getName() : "未知项目";
             String result = record.getResultValue();
 

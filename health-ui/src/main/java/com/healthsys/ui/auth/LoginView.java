@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.auth;
+package com.healthsys.ui.auth;
 
 import com.healthsys.service.AuthService;
 import com.healthsys.common.entity.Users;
@@ -194,11 +194,8 @@ public class LoginView extends JFrame {
     }
 
     private void redirectBasedOnRole(Users user) {
-        if (user.getRole().matches("MEDICAL|admin")) {
-            openMedicalInterface();
-        } else {
-            openUserInterface(user);
-        }
+        // 新架构下通过独立表区分角色，普通用户统一跳转到用户界面
+        openUserInterface(user);
     }
 
     private void openMedicalInterface() {

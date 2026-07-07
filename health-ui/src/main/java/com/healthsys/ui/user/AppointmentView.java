@@ -1,6 +1,6 @@
-﻿package com.healthsys.common.view.appointment;
+package com.healthsys.ui.user;
 
-import com.healthsys.service.AppointmentController;
+import com.healthsys.service.AppointmentService;
 import com.healthsys.service.MockPaymentService;
 import com.healthsys.service.PaymentService;
 import com.healthsys.common.entity.Appointment;
@@ -19,11 +19,11 @@ import java.util.List;
 public class AppointmentView {
     private JPanel appointmentPanel;
     private Users currentUser;
-    private AppointmentController controller;
+    private AppointmentService controller;
 
     public AppointmentView(Users currentUser) {
         this.currentUser = currentUser;
-        this.controller = new AppointmentController();
+        this.controller = new AppointmentService();
         initializeUI();
     }
 
@@ -38,7 +38,7 @@ public class AppointmentView {
         // toolbarPanel.add(newAppointmentBtn);
 
         // 预约表格
-        String[] columnNames = { "ID", "套餐/项目", "类型", "预约时间", "状态", "支付状态", "操作" };
+        String[] columnNames = { "ID", "检查组/项目", "类型", "预约时间", "状态", "支付状态", "操作" };
         DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -73,13 +73,13 @@ public class AppointmentView {
             String itemName = "";
             String type = "";
 
-            if (appointment.getPackageId() != null) {
-                CheckItemGroup pkg = controller.getAllPackages().stream()
-                        .filter(p -> p.getId().equals(appointment.getPackageId()))
+            if (appointment.getGroupId() != null) {
+                CheckItemGroup pkg = controller.getAllGroups().stream()
+                        .filter(p -> p.getId().equals(appointment.getGroupId()))
                         .findFirst()
                         .orElse(new CheckItemGroup());
                 itemName = pkg.getName();
-                type = "套餐";
+                type = "检查组";
             } else {
                 itemName = "未知项目";
                 type = "未定义";
@@ -105,18 +105,18 @@ public class AppointmentView {
         dialog.setLocationRelativeTo(appointmentPanel);
         dialog.setModal(true);
 
-        // 自定义套餐面板
-        JPanel customPackagePanel = createCustomPackagePanel(dialog);
-        dialog.add(customPackagePanel);
+        // 自定义检查组面板
+        JPanel customGroupPanel = createCustomGroupPanel(dialog);
+        dialog.add(customGroupPanel);
         dialog.setVisible(true);
     }
 
-    private JPanel createCustomPackagePanel(JDialog parentDialog) {
+    private JPanel createCustomGroupPanel(JDialog parentDialog) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // 标题
-        JLabel titleLabel = new JLabel("自定义体检套餐", JLabel.CENTER);
+        JLabel titleLabel = new JLabel("自定义检查组", JLabel.CENTER);
         titleLabel.setFont(new Font("微软雅黑", Font.BOLD, 18));
         panel.add(titleLabel, BorderLayout.NORTH);
 
@@ -135,7 +135,7 @@ public class AppointmentView {
         JList<CheckItem> availableList = new JList<>(availableModel);
         JList<CheckItem> selectedList = new JList<>(selectedModel);
 
-        // 加载所有未被当前用户套餐包含的检查项目
+        // 加载所有可用的检查项目
         List<CheckItem> allTests = controller.getAllTests();
         allTests.forEach(availableModel::addElement);
 
@@ -177,7 +177,7 @@ public class AppointmentView {
             }
         });
 
-        // 下方输入框：套餐名称、描述、价格等
+        // 下方输入框：检查组名称、描述、价格等
         JPanel inputPanel = new JPanel(new GridLayout(0, 2));
         JTextField nameField = new JTextField();
         JTextArea descArea = new JTextArea();
@@ -186,7 +186,7 @@ public class AppointmentView {
         // 价格自动计算
         priceField.setEditable(false); // 使价格字段不可编辑，由系统自动计算
 
-        inputPanel.add(new JLabel("套餐名称:"));
+        inputPanel.add(new JLabel("检查组名称:"));
         inputPanel.add(nameField);
         inputPanel.add(new JLabel("描述:"));
         inputPanel.add(new JScrollPane(descArea));
@@ -194,11 +194,11 @@ public class AppointmentView {
         inputPanel.add(priceField);
 
         // 提交按钮
-        JButton submitBtn = new JButton("提交自定义套餐");
+        JButton submitBtn = new JButton("提交检查组");
         submitBtn.addActionListener(e -> {
             // 验证输入
             if (nameField.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(parentDialog, "请输入套餐名称", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(parentDialog, "请输入检查组名称", "错误", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -214,10 +214,10 @@ public class AppointmentView {
                 totalPrice += test.getPrice();
             }
 
-            CheckItemGroup newPackage = new CheckItemGroup();
-            newPackage.setName(nameField.getText());
-            newPackage.setDescription(descArea.getText());
-            newPackage.setPrice(totalPrice);
+            CheckItemGroup newGroup = new CheckItemGroup();
+            newGroup.setName(nameField.getText());
+            newGroup.setDescription(descArea.getText());
+            newGroup.setPrice(totalPrice);
 
             List<Long> selectedTestIds = new ArrayList<>();
             for (int i = 0; i < selectedModel.getSize(); i++) {
@@ -225,18 +225,18 @@ public class AppointmentView {
                 selectedTestIds.add(test.getId());
             }
 
-            if (controller.createCustomPackage(newPackage, selectedTestIds)) {
-                JOptionPane.showMessageDialog(parentDialog, "套餐创建成功！");
+            if (controller.createCustomGroup(newGroup, selectedTestIds)) {
+                JOptionPane.showMessageDialog(parentDialog, "检查组创建成功！");
 
                 // 显示预约时间选择对话框
-                showTimeSelectionDialog(newPackage.getId(), null, parentDialog);
+                showTimeSelectionDialog(newGroup.getId(), null, parentDialog);
 
                 parentDialog.dispose();
                 // 刷新预约表格
                 loadAppointmentData((DefaultTableModel) ((JTable) ((JScrollPane) appointmentPanel.getComponent(1))
                         .getViewport().getView()).getModel());
             } else {
-                JOptionPane.showMessageDialog(parentDialog, "套餐创建失败！", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(parentDialog, "检查组创建失败！", "错误", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -268,7 +268,7 @@ public class AppointmentView {
         return panel;
     }
 
-    private void showTimeSelectionDialog(Long packageId, Long testId, JDialog parentDialog) {
+    private void showTimeSelectionDialog(Long groupId, Long testId, JDialog parentDialog) {
         JDialog timeDialog = new JDialog(parentDialog, "选择预约时间", true);
         timeDialog.setSize(400, 200);
         timeDialog.setLocationRelativeTo(parentDialog);
@@ -286,7 +286,7 @@ public class AppointmentView {
         submitBtn.addActionListener(e -> {
             Date appointmentTime = (Date) timeSpinner.getValue();
 
-            if (controller.createAppointment(currentUser, packageId, appointmentTime)) {
+            if (controller.createAppointment(currentUser, groupId, appointmentTime)) {
                 System.out.println("✅【预约成功】即将显示支付确认对话框"); // 调试信息
                 JOptionPane.showMessageDialog(timeDialog, "预约成功!", "成功", JOptionPane.INFORMATION_MESSAGE);
 
@@ -300,7 +300,7 @@ public class AppointmentView {
 
                 if (option == JOptionPane.YES_OPTION) {
                     // 用户选择立即支付
-                    showPaymentDialog(packageId); // 假设返回的 appointmentId 可从 controller 获取
+                    showPaymentDialog(groupId); // 假设返回的 appointmentId 可从 controller 获取
                 } else {
                     // 用户选择稍后支付
                     JOptionPane.showMessageDialog(timeDialog, "您可稍后支付，请注意支付截止时间", "提示",
@@ -366,12 +366,12 @@ public class AppointmentView {
         }
     }
 
-    // 套餐表格按钮编辑器
-    class PackageButtonEditor extends DefaultCellEditor {
+    // 检查组表格按钮编辑器
+    class GroupButtonEditor extends DefaultCellEditor {
         private String label;
         private JDialog parentDialog;
 
-        public PackageButtonEditor(JCheckBox checkBox, JDialog parentDialog) {
+        public GroupButtonEditor(JCheckBox checkBox, JDialog parentDialog) {
             super(checkBox);
             this.parentDialog = parentDialog;
         }
@@ -381,8 +381,8 @@ public class AppointmentView {
             label = (value == null) ? "" : value.toString();
             JButton button = new JButton(label);
             button.addActionListener(e -> {
-                Long packageId = (Long) table.getValueAt(row, 0);
-                showTimeSelectionDialog(packageId, null, parentDialog);
+                Long groupId = (Long) table.getValueAt(row, 0);
+                showTimeSelectionDialog(groupId, null, parentDialog);
                 fireEditingStopped();
             });
             return button;
@@ -426,7 +426,7 @@ public class AppointmentView {
 
     private void showCustomPackageDialog() {
         JDialog dialog = new JDialog();
-        dialog.setTitle("自定义体检套餐");
+        dialog.setTitle("自定义检查组");
         dialog.setSize(800, 600);
         dialog.setLocationRelativeTo(appointmentPanel);
         dialog.setModal(true);
@@ -448,7 +448,7 @@ public class AppointmentView {
         JList<CheckItem> availableList = new JList<>(availableModel);
         JList<CheckItem> selectedList = new JList<>(selectedModel);
 
-        // 加载所有未被当前用户套餐包含的检查项目
+        // 加载所有可用的检查项目
         List<CheckItem> allTests = controller.getAllTests();
         allTests.forEach(availableModel::addElement);
 
@@ -490,7 +490,7 @@ public class AppointmentView {
             }
         });
 
-        // 下方输入框：套餐名称、描述、价格等
+        // 下方输入框：检查组名称、描述、价格等
         JPanel inputPanel = new JPanel(new GridLayout(0, 2));
         JTextField nameField = new JTextField();
         JTextArea descArea = new JTextArea();
@@ -499,7 +499,7 @@ public class AppointmentView {
         // 价格自动计算
         priceField.setEditable(false); // 使价格字段不可编辑，由系统自动计算
 
-        inputPanel.add(new JLabel("套餐名称:"));
+        inputPanel.add(new JLabel("检查组名称:"));
         inputPanel.add(nameField);
         inputPanel.add(new JLabel("描述:"));
         inputPanel.add(new JScrollPane(descArea));
@@ -507,11 +507,11 @@ public class AppointmentView {
         inputPanel.add(priceField);
 
         // 提交按钮
-        JButton submitBtn = new JButton("提交自定义套餐");
+        JButton submitBtn = new JButton("提交检查组");
         submitBtn.addActionListener(e -> {
             // 验证输入
             if (nameField.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "请输入套餐名称", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "请输入检查组名称", "错误", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -527,10 +527,10 @@ public class AppointmentView {
                 totalPrice += test.getPrice();
             }
 
-            CheckItemGroup newPackage = new CheckItemGroup();
-            newPackage.setName(nameField.getText());
-            newPackage.setDescription(descArea.getText());
-            newPackage.setPrice(totalPrice);
+            CheckItemGroup newGroup = new CheckItemGroup();
+            newGroup.setName(nameField.getText());
+            newGroup.setDescription(descArea.getText());
+            newGroup.setPrice(totalPrice);
 
             List<Long> selectedTestIds = new ArrayList<>();
             for (int i = 0; i < selectedModel.getSize(); i++) {
@@ -538,14 +538,14 @@ public class AppointmentView {
                 selectedTestIds.add(test.getId());
             }
 
-            if (controller.createCustomPackage(newPackage, selectedTestIds)) {
-                JOptionPane.showMessageDialog(dialog, "套餐创建成功！");
+            if (controller.createCustomGroup(newGroup, selectedTestIds)) {
+                JOptionPane.showMessageDialog(dialog, "检查组创建成功！");
                 dialog.dispose();
                 // 刷新预约表格
                 loadAppointmentData((DefaultTableModel) ((JTable) ((JScrollPane) appointmentPanel.getComponent(1))
                         .getViewport().getView()).getModel());
             } else {
-                JOptionPane.showMessageDialog(dialog, "套餐创建失败！", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "检查组创建失败！", "错误", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -600,7 +600,7 @@ public class AppointmentView {
             // 1. 获取预约价格
             Double price = controller.getAppointmentPrice(appointmentId);
             if (price == null) {
-                JOptionPane.showMessageDialog(paymentDialog, "无法获取套餐价格", "错误", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(paymentDialog, "无法获取检查组价格", "错误", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -641,10 +641,10 @@ public class AppointmentView {
 class DetailButtonEditor extends DefaultCellEditor {
     private String label;
     private JDialog parentDialog;
-    private AppointmentController controller;
+    private AppointmentService controller;
     private JPanel appointmentPanel;
 
-    public DetailButtonEditor(JCheckBox checkBox, JDialog parentDialog, AppointmentController controller,
+    public DetailButtonEditor(JCheckBox checkBox, JDialog parentDialog, AppointmentService controller,
             JPanel appointmentPanel) {
         super(checkBox);
         this.parentDialog = parentDialog;
@@ -657,22 +657,22 @@ class DetailButtonEditor extends DefaultCellEditor {
         label = (value == null) ? "" : value.toString();
         JButton button = new JButton(label);
         button.addActionListener(e -> {
-            Long packageId = (Long) table.getValueAt(row, 0);
-            CheckItemGroup selectedPackage = controller.getAllPackages().stream()
-                    .filter(p -> p.getId().equals(packageId))
+            Long groupId = (Long) table.getValueAt(row, 0);
+            CheckItemGroup selectedGroup = controller.getAllGroups().stream()
+                    .filter(p -> p.getId().equals(groupId))
                     .findFirst()
                     .orElse(null);
 
-            if (selectedPackage != null) {
-                showPackageDetail(selectedPackage, parentDialog);
+            if (selectedGroup != null) {
+                showGroupDetail(selectedGroup, parentDialog);
             }
             fireEditingStopped();
         });
         return button;
     }
 
-    private void showPackageDetail(CheckItemGroup checkItemGroup, JDialog parentDialog) {
-        JDialog detailDialog = new JDialog(parentDialog, "套餐详情 - " + checkItemGroup.getName(), true);
+    private void showGroupDetail(CheckItemGroup checkItemGroup, JDialog parentDialog) {
+        JDialog detailDialog = new JDialog(parentDialog, "检查组详情 - " + checkItemGroup.getName(), true);
         detailDialog.setSize(800, 600);
         detailDialog.setLocationRelativeTo(parentDialog);
 

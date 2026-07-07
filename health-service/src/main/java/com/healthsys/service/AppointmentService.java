@@ -1,4 +1,4 @@
-﻿package com.healthsys.service;
+package com.healthsys.service;
 
 import com.healthsys.dao.AppointmentDAO;
 import com.healthsys.dao.CheckItemDAO;
@@ -7,52 +7,54 @@ import com.healthsys.common.entity.Appointment;
 import com.healthsys.common.entity.CheckItem;
 import com.healthsys.common.entity.CheckItemGroup;
 import com.healthsys.common.entity.Users;
-import com.healthsys.common.util.DbUtil;
-import com.healthsys.ui.user.AppointmentView;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class AppointmentService {
     private AppointmentDAO appointmentDAO;
-    private CheckItemGroupDAO packageDAO;
-    private CheckItemDAO testDAO;
+    private CheckItemGroupDAO checkItemGroupDAO;
+    private CheckItemDAO checkItemDAO;
 
     public AppointmentService() {
         this.appointmentDAO = new AppointmentDAO();
-        this.packageDAO = new CheckItemGroupDAO();
-        this.testDAO = new CheckItemDAO();
+        this.checkItemGroupDAO = new CheckItemGroupDAO();
+        this.checkItemDAO = new CheckItemDAO();
     }
 
     public Double getAppointmentPrice(Long appointmentId) {
         Appointment appointment = appointmentDAO.getAppointmentById(appointmentId);
-        if (appointment == null)
-            return null;
-
-        Long packageId = appointment.getPackageId();
-        if (packageId == null)
-            return 0.0; // 如果是单项检查，后续可扩展
-
-        CheckItemGroup testPackage = packageDAO.getPackageById(packageId);
-        if (testPackage == null)
-            return null;
-
-        return testPackage.getPrice();
+        if (appointment == null) return null;
+        Long groupId = appointment.getGroupId();
+        if (groupId == null) return 0.0;
+        CheckItemGroup group = checkItemGroupDAO.getById(groupId);
+        return group != null ? group.getPrice() : null;
     }
 
     public Appointment getAppointmentById(Long appointmentId) {
         return appointmentDAO.getAppointmentById(appointmentId);
     }
 
-    public boolean createAppointment(Users user, Long packageId, LocalDateTime appointmentTime) {
-        Appointment appointment = new Appointment(user.getId(), packageId, appointmentTime);
+    // 新版：支持examDate和examTimeSlot
+    public boolean createAppointment(Users user, Long groupId, LocalDate examDate, String examTimeSlot) {
+        Appointment appointment = new Appointment(user.getId(), groupId, LocalDateTime.now());
+        appointment.setExamDate(examDate);
+        appointment.setExamTimeSlot(examTimeSlot);
+        return appointmentDAO.createAppointment(appointment);
+    }
+
+    // 兼容旧版：用java.util.Date（转为LocalDateTime作为预约时间）
+    public boolean createAppointment(Users user, Long groupId, java.util.Date appointmentTime) {
+        LocalDateTime ldt = appointmentTime.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
+        Appointment appointment = new Appointment(user.getId(), groupId, ldt);
+        appointment.setExamDate(ldt.toLocalDate());
+        return appointmentDAO.createAppointment(appointment);
+    }
+
+    // 完全兼容旧版签名
+    public boolean createAppointment(Users user, Long groupId, LocalDateTime appointmentTime) {
+        Appointment appointment = new Appointment(user.getId(), groupId, appointmentTime);
+        appointment.setExamDate(appointmentTime.toLocalDate());
         return appointmentDAO.createAppointment(appointment);
     }
 
@@ -68,106 +70,40 @@ public class AppointmentService {
         return appointmentDAO.completeAppointment(appointmentId);
     }
 
-    public List<CheckItemGroup> getAllPackages() {
-        return packageDAO.getAllPackages();
+    public List<CheckItemGroup> getAllGroups() {
+        return checkItemGroupDAO.getAll();
     }
 
-    public boolean createCustomPackage(CheckItemGroup testPackage, List<Long> testIds) {
-        return packageDAO.createPackage(testPackage, testIds);
+    public boolean createCustomGroup(CheckItemGroup group, List<Long> itemIds) {
+        return checkItemGroupDAO.createGroup(group, itemIds);
     }
 
     public List<Appointment> getUserAppointmentsByStatus(long userId, String status) {
-        List<Appointment> appointments = new ArrayList<>();
-        String sql = "SELECT * FROM appointments WHERE user_id = ? AND status = ?";
-        try (Connection conn = DbUtil.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, userId);
-            stmt.setString(2, status);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                Appointment appointment = new Appointment(
-                        rs.getLong("user_id"),
-                        rs.getObject("package_id") != null ? rs.getLong("package_id") : null,
-                        rs.getObject("appointment_time", LocalDateTime.class));
-                appointment.setId(rs.getLong("id"));
-                appointment.setStatus(rs.getString("status"));
-                appointment.setPaymentStatus(rs.getBoolean("payment_status"));
-
-                if (rs.getTimestamp("exam_time") != null) {
-                    appointment.setExamTime(rs.getObject("exam_time", LocalDateTime.class));
-                }
-
-                appointments.add(appointment);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return appointments;
+        return appointmentDAO.getUserAppointments(userId).stream()
+                .filter(a -> status.equals(a.getStatus()))
+                .toList();
     }
 
     public boolean updatePaymentStatus(Long appointmentId, boolean paid) {
         return appointmentDAO.updatePaymentStatus(appointmentId, paid);
     }
 
-    public CheckItemGroup getTestPackageById(Long packageId) {
-        String sql = "SELECT * FROM test_packages WHERE id = ?";
-        try (Connection conn = DbUtil.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, packageId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new CheckItemGroup(
-                        rs.getLong("id"),
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getDouble("price"),
-                        rs.getObject("created_at", LocalDateTime.class));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public CheckItemGroup getCheckItemGroupById(Long groupId) {
+        return checkItemGroupDAO.getById(groupId);
     }
 
-    public CheckItem getMedicalTestById(Long testId) {
-        String sql = "SELECT * FROM medical_tests WHERE id = ?";
-        try (Connection conn = DbUtil.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, testId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new CheckItem(
-                        rs.getLong("id"),
-                        rs.getString("name"),
-                        rs.getString("code"),
-                        rs.getString("description"),
-                        rs.getString("normal_range"),
-                        rs.getDouble("price"),
-                        rs.getObject("created_at", LocalDateTime.class));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public CheckItem getCheckItemById(Long itemId) {
+        return checkItemDAO.getById(itemId);
     }
 
     public List<CheckItem> getAllTests() {
-        return testDAO.getAllTests();
+        return checkItemDAO.getAll();
     }
 
-    private AppointmentView appointmentView;
+    // 兼容旧方法名
+    public List<CheckItemGroup> getAllPackages() { return getAllGroups(); }
+    public boolean createCustomPackage(CheckItemGroup group, List<Long> itemIds) { return createCustomGroup(group, itemIds); }
+    public CheckItemGroup getTestPackageById(Long id) { return getCheckItemGroupById(id); }
+    public CheckItem getMedicalTestById(Long id) { return getCheckItemById(id); }
 
-    public void setAppointmentView(AppointmentView view) {
-        this.appointmentView = view;
-    }
-
-    public void notifyAppointmentViewRefresh() {
-        if (appointmentView != null) {
-            appointmentView.refreshAppointmentData();
-        }
-    }
 }

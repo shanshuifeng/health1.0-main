@@ -33,9 +33,7 @@ public class MainView {
         // this.examRecordView = new ExamRecordView(currentUser);
         this.aboutView = new AboutView();
 
-        if ("MEDICAL".equals(currentUser.getRole())) {
-            // this.userManagementView = new UserManagementView(currentUser);
-        }
+        // 角色检查已移除 — 新架构下用户统一进入普通用户界面
 
         // 初始化UI组件
         this.mainFrame = new JFrame("健康管理系统");
@@ -80,7 +78,7 @@ public class MainView {
         // 导航按钮
         addNavButton("首页", "home.png", () -> showPanel("home"));
         addNavButton("预约", "message.png", () -> showPanel("messages")); // 新增消息按钮
-        addNavButton("自定义套餐", "package_customize.png", () -> showPanel("customPackage"));
+        addNavButton("自定义检查组", "package_customize.png", () -> showPanel("customPackage"));
         addNavButton("消息", "calendar.png", () -> showPanel("appointment"));
         addNavButton("体检信息", "health.png", () -> showPanel("checkupInfo")); // 新增体检信息按钮
         addNavButton("关于", "info.png", () -> showPanel("about"));
@@ -128,7 +126,7 @@ public class MainView {
         appointmentPanel.setName("appointment");
         rightPanel.add(appointmentPanel, "appointment");
 
-        // 创建自定义套餐面板
+        // 创建自定义检查组面板
         CustomPackageView customPackageView = new CustomPackageView(currentUser);
         JPanel customPackagePanel = customPackageView.getCustomPackagePanel();
         customPackagePanel.setName("customPackage");
@@ -208,7 +206,7 @@ public class MainView {
         String title = switch (panelName) {
             case "home" -> "首页";
             case "messages" -> "消息";
-            case "appointment" -> "自定义套餐";
+            case "appointment" -> "自定义检查组";
             case "checkupInfo" -> "体检信息";
             case "userManagement" -> "体检信息";
             case "about" -> "关于";
@@ -222,7 +220,7 @@ public class MainView {
         String statusText = String.format(
                 "当前用户: %s (%s) | %s | 登录时间: %s",
                 currentUser.getName(),
-                currentUser.getRole(),
+                "用户",
                 currentView,
                 new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
         statusLabel.setText(statusText);

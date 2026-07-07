@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.CheckItem;
 import com.healthsys.common.entity.CheckItemGroup;
@@ -30,11 +30,11 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
 
     private void setupSearchPanel() {
         // 添加查询字段
-        getSearchPanel().add(new JLabel("套餐ID:"));
+        getSearchPanel().add(new JLabel("检查组ID:"));
         idSearchField = new JTextField(8);
         getSearchPanel().add(idSearchField);
 
-        getSearchPanel().add(new JLabel("套餐名称:"));
+        getSearchPanel().add(new JLabel("检查组名称:"));
         nameSearchField = new JTextField(15);
         getSearchPanel().add(nameSearchField);
 
@@ -69,9 +69,9 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
                 CheckItemGroup newGroup = dialog.getCheckItemGroup();
                 if (checkItemGroupDAO.add(newGroup)) {
                     refreshData();
-                    JOptionPane.showMessageDialog(this, "体检套餐添加成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "检查组添加成功", "成功", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    JOptionPane.showMessageDialog(this, "体检套餐添加失败", "错误", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "检查组添加失败", "错误", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -80,7 +80,7 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
         getEditButton().addActionListener(e -> {
             CheckItemGroup selected = getSelectedCheckGroup();
             if (selected == null) {
-                JOptionPane.showMessageDialog(this, "请先选择要编辑的体检套餐", "提示", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "请先选择要编辑的检查组", "提示", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -89,9 +89,9 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
                 CheckItemGroup updatedGroup = dialog.getCheckItemGroup();
                 if (checkItemGroupDAO.update(updatedGroup)) {
                     refreshData();
-                    JOptionPane.showMessageDialog(this, "体检套餐更新成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "检查组更新成功", "成功", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    JOptionPane.showMessageDialog(this, "体检套餐更新失败", "错误", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "检查组更新失败", "错误", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -100,20 +100,20 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
         getDeleteButton().addActionListener(e -> {
             CheckItemGroup selected = getSelectedCheckGroup();
             if (selected == null) {
-                JOptionPane.showMessageDialog(this, "请先选择要删除的体检套餐", "提示", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "请先选择要删除的检查组", "提示", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             int confirm = JOptionPane.showConfirmDialog(this,
-                    "确定要删除体检套餐 " + selected.getName() + " 吗?",
+                    "确定要删除检查组 " + selected.getName() + " 吗?",
                     "确认删除", JOptionPane.YES_NO_OPTION);
 
             if (confirm == JOptionPane.YES_OPTION) {
                 if (checkItemGroupDAO.delete(selected.getId())) {
                     refreshData();
-                    JOptionPane.showMessageDialog(this, "体检套餐删除成功", "成功", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "检查组删除成功", "成功", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    JOptionPane.showMessageDialog(this, "体检套餐删除失败", "错误", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "检查组删除失败", "错误", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -123,12 +123,12 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
         detailsButton.addActionListener(e -> {
             CheckItemGroup selected = getSelectedCheckGroup();
             if (selected == null) {
-                JOptionPane.showMessageDialog(this, "请先选择要查看的体检套餐", "提示", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "请先选择要查看的检查组", "提示", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            // 获取套餐包含的检查项
-            List<CheckItem> items = CheckItemDAO.getItemsByPackageId(selected.getId());
+            // 获取检查组包含的检查项
+            List<CheckItem> items = CheckItemDAO.getItemsByGroupId(selected.getId());
             new PackageDetailsDialog(selected, items).setVisible(true);
         });
 
@@ -189,7 +189,7 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
     }
 
     private class CheckGroupTableModel extends AbstractTableModel {
-        private String[] columnNames = {"ID", "套餐名称", "套餐描述", "价格", "创建时间"};
+        private String[] columnNames = {"ID", "检查组名称", "检查组描述", "价格", "创建时间"};
         private List<CheckItemGroup> data;
 
         public void setData(List<CheckItemGroup> data) {

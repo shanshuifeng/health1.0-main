@@ -1,6 +1,6 @@
-﻿package com.healthsys.common.view;
+package com.healthsys.ui.user;
 
-import com.healthsys.service.AppointmentController;
+import com.healthsys.service.AppointmentService;
 import com.healthsys.common.entity.Users;
 import com.healthsys.common.entity.CheckItemGroup;
 import javax.swing.*;
@@ -11,11 +11,11 @@ import java.awt.event.ActionEvent;
 public class MessagesView {
     private JPanel messagesPanel;
     private Users currentUser;
-    private AppointmentController controller;
+    private AppointmentService controller;
 
     public MessagesView(Users currentUser) {
         this.currentUser = currentUser;
-        this.controller = new AppointmentController();
+        this.controller = new AppointmentService();
         initializeUI();
     }
 
@@ -25,40 +25,40 @@ public class MessagesView {
 
         // 标题面板
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel titleLabel = new JLabel("体检套餐信息");
+        JLabel titleLabel = new JLabel("检查组信息");
         titleLabel.setFont(new Font("微软雅黑", Font.BOLD, 18));
         titlePanel.add(titleLabel);
 
-        // 套餐表格
-        String[] packageColumns = { "ID", "套餐名称", "描述", "价格", "预约", "查看详情" };
-        DefaultTableModel packageModel = new DefaultTableModel(packageColumns, 0) {
+        // 检查组表格
+        String[] groupColumns = { "ID", "检查组名称", "描述", "价格", "预约", "查看详情" };
+        DefaultTableModel groupModel = new DefaultTableModel(groupColumns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 4 || column == 5; // 只有操作列可编辑
             }
         };
 
-        JTable packageTable = new JTable(packageModel);
-        packageTable.setRowHeight(30);
-        packageTable.getColumnModel().getColumn(4).setCellRenderer(new ButtonRenderer());
-        packageTable.getColumnModel().getColumn(4)
-                .setCellEditor(new PackageButtonEditor(new JCheckBox(), messagesPanel));
-        packageTable.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
-        packageTable.getColumnModel().getColumn(5)
-                .setCellEditor(new DetailButtonEditor(new JCheckBox(), messagesPanel, controller));
+        JTable groupTable = new JTable(groupModel);
+        groupTable.setRowHeight(30);
+        groupTable.getColumnModel().getColumn(4).setCellRenderer(new ButtonRenderer());
+        groupTable.getColumnModel().getColumn(4)
+                .setCellEditor(new GroupButtonEditor(new JCheckBox(), messagesPanel));
+        groupTable.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
+        groupTable.getColumnModel().getColumn(5)
+                .setCellEditor(new MessagesDetailButtonEditor(new JCheckBox(), messagesPanel, controller));
 
-        // 加载套餐数据
-        loadPackageData(packageModel);
+        // 加载检查组数据
+        loadGroupData(groupModel);
 
         messagesPanel.add(titlePanel, BorderLayout.NORTH);
-        messagesPanel.add(new JScrollPane(packageTable), BorderLayout.CENTER);
+        messagesPanel.add(new JScrollPane(groupTable), BorderLayout.CENTER);
     }
 
-    private void loadPackageData(DefaultTableModel model) {
+    private void loadGroupData(DefaultTableModel model) {
         model.setRowCount(0);
-        // 加载套餐数据
-        java.util.List<CheckItemGroup> packages = controller.getAllPackages();
-        for (CheckItemGroup pkg : packages) {
+        // 加载检查组数据
+        java.util.List<CheckItemGroup> groups = controller.getAllGroups();
+        for (CheckItemGroup pkg : groups) {
             Object[] rowData = {
                     pkg.getId(),
                     pkg.getName(),
@@ -88,12 +88,12 @@ public class MessagesView {
         }
     }
 
-    // 套餐表格按钮编辑器
-    class PackageButtonEditor extends DefaultCellEditor {
+    // 检查组表格按钮编辑器
+    class GroupButtonEditor extends DefaultCellEditor {
         private String label;
         private JPanel parentPanel;
 
-        public PackageButtonEditor(JCheckBox checkBox, JPanel parentPanel) {
+        public GroupButtonEditor(JCheckBox checkBox, JPanel parentPanel) {
             super(checkBox);
             this.parentPanel = parentPanel;
         }
@@ -103,8 +103,8 @@ public class MessagesView {
             label = (value == null) ? "" : value.toString();
             JButton button = new JButton(label);
             button.addActionListener(e -> {
-                Long packageId = (Long) table.getValueAt(row, 0);
-                showTimeSelectionDialog(packageId);
+                Long groupId = (Long) table.getValueAt(row, 0);
+                showTimeSelectionDialog(groupId);
                 fireEditingStopped();
             });
             return button;
@@ -115,7 +115,7 @@ public class MessagesView {
         }
     }
 
-    private void showTimeSelectionDialog(Long packageId) {
+    private void showTimeSelectionDialog(Long groupId) {
         JDialog timeDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(messagesPanel), "选择预约时间", true);
         timeDialog.setSize(400, 200);
         timeDialog.setLocationRelativeTo(messagesPanel);
@@ -135,7 +135,7 @@ public class MessagesView {
         submitBtn.addActionListener(e -> {
             java.util.Date appointmentTime = (java.util.Date) timeSpinner.getValue();
 
-            if (controller.createAppointment(currentUser, packageId, appointmentTime)) {
+            if (controller.createAppointment(currentUser, groupId, appointmentTime)) {
                 JOptionPane.showMessageDialog(timeDialog, "预约成功!", "成功", JOptionPane.INFORMATION_MESSAGE);
                 timeDialog.dispose();
             } else {
@@ -151,12 +151,12 @@ public class MessagesView {
     }
 }
 
-class DetailButtonEditor extends DefaultCellEditor {
+class MessagesDetailButtonEditor extends DefaultCellEditor {
     private String label;
     private JPanel parentPanel;
-    private AppointmentController controller;
+    private AppointmentService controller;
 
-    public DetailButtonEditor(JCheckBox checkBox, JPanel parentPanel, AppointmentController controller) {
+    public MessagesDetailButtonEditor(JCheckBox checkBox, JPanel parentPanel, AppointmentService controller) {
         super(checkBox);
         this.parentPanel = parentPanel;
         this.controller = controller;
@@ -167,28 +167,27 @@ class DetailButtonEditor extends DefaultCellEditor {
         label = (value == null) ? "" : value.toString();
         JButton button = new JButton(label);
         button.addActionListener(e -> {
-            Long packageId = (Long) table.getValueAt(row, 0);
-            CheckItemGroup selectedPackage = controller.getAllPackages().stream()
-                    .filter(p -> p.getId().equals(packageId))
+            Long groupId = (Long) table.getValueAt(row, 0);
+            CheckItemGroup selectedGroup = controller.getAllGroups().stream()
+                    .filter(p -> p.getId().equals(groupId))
                     .findFirst()
                     .orElse(null);
 
-            if (selectedPackage != null) {
-                showPackageDetail(selectedPackage);
+            if (selectedGroup != null) {
+                showGroupDetail(selectedGroup);
             }
             fireEditingStopped();
         });
         return button;
     }
 
-    private void showPackageDetail(CheckItemGroup checkItemGroup) {
+    private void showGroupDetail(CheckItemGroup checkItemGroup) {
         JDialog detailDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(parentPanel),
-                "套餐详情 - " + checkItemGroup.getName(), true);
+                "检查组详情 - " + checkItemGroup.getName(), true);
         detailDialog.setSize(800, 600);
         detailDialog.setLocationRelativeTo(parentPanel);
 
-        com.healthsys.common.view.appointment.PackageDetailView detailView = new com.healthsys.common.view.appointment.PackageDetailView(
-                checkItemGroup);
+        PackageDetailView detailView = new PackageDetailView(checkItemGroup);
         detailDialog.add(detailView.getDetailPanel());
         detailDialog.setVisible(true);
     }

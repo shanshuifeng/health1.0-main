@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.CheckItemGroup;
 import com.healthsys.ui.medical.CrudPanel;
@@ -33,7 +33,7 @@ public class CheckGroupDialog extends JDialog {
         setSize(500, 300);
         setLocationRelativeTo(null);
         setModal(true);
-        setTitle(checkItemGroup.getId() == null ? "新增体检套餐" : "编辑体检套餐");
+        setTitle(checkItemGroup.getId() == null ? "新增检查组" : "编辑检查组");
 
         // 主面板
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -48,18 +48,18 @@ public class CheckGroupDialog extends JDialog {
         // ID字段（仅显示，不可编辑）
         idField = createStyledTextField(checkItemGroup.getId() != null ? checkItemGroup.getId().toString() : "自动生成");
         idField.setEditable(false);
-        addFormField(formPanel, "套餐ID:", idField);
+        addFormField(formPanel, "检查组ID:", idField);
 
         // 名称字段
-        addFormField(formPanel, "套餐名称:",
+        addFormField(formPanel, "检查组名称:",
                 nameField = createStyledTextField(checkItemGroup.getName()));
 
         // 描述字段
-        addFormField(formPanel, "套餐描述:",
+        addFormField(formPanel, "检查组描述:",
                 descriptionField = createStyledTextField(checkItemGroup.getDescription()));
 
         // 价格字段
-        addFormField(formPanel, "套餐价格:",
+        addFormField(formPanel, "检查组价格:",
                 priceField = createStyledTextField(
                         checkItemGroup.getPrice() != null ? checkItemGroup.getPrice().toString() : ""));
 

@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import javax.swing.*;
 import java.awt.*;

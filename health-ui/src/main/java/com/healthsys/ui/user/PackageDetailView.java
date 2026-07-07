@@ -1,6 +1,6 @@
-﻿package com.healthsys.common.view.appointment;
+package com.healthsys.ui.user;
 
-import com.healthsys.service.PackageTestController;
+import com.healthsys.dao.CheckItemGroupDAO;
 import com.healthsys.common.entity.CheckItemGroup;
 import com.healthsys.common.entity.CheckItem;
 import javax.swing.*;
@@ -11,7 +11,7 @@ import java.util.List;
 public class PackageDetailView {
     private JPanel detailPanel;
     private CheckItemGroup checkItemGroup;
-    private PackageTestController packageTestController = new PackageTestController();
+    private CheckItemGroupDAO checkItemGroupDAO = new CheckItemGroupDAO();
 
     public PackageDetailView(CheckItemGroup checkItemGroup) {
         this.checkItemGroup = checkItemGroup;
@@ -22,11 +22,11 @@ public class PackageDetailView {
         detailPanel = new JPanel(new BorderLayout());
         detailPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // 套餐基本信息面板
+        // 检查组基本信息面板
         JPanel infoPanel = new JPanel(new GridLayout(0, 2, 10, 10));
-        infoPanel.setBorder(BorderFactory.createTitledBorder("套餐信息"));
+        infoPanel.setBorder(BorderFactory.createTitledBorder("检查组信息"));
 
-        infoPanel.add(new JLabel("套餐名称:"));
+        infoPanel.add(new JLabel("检查组名称:"));
         infoPanel.add(new JLabel(checkItemGroup.getName()));
 
         infoPanel.add(new JLabel("描述:"));
@@ -50,7 +50,7 @@ public class PackageDetailView {
 
     private void loadTestsData(DefaultTableModel model) {
         model.setRowCount(0);
-        List<CheckItem> tests = packageTestController.getCheckItemsByPackage(checkItemGroup.getId());
+        List<CheckItem> tests = checkItemGroupDAO.getCheckItemsByGroup(checkItemGroup.getId());
 
         for (CheckItem test : tests) {
             Object[] rowData = {

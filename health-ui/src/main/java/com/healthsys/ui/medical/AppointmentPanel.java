@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.Appointment;
 import com.healthsys.ui.medical.AppointmentDialog;
@@ -151,7 +151,7 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
     }
 
     private class AppointmentTableModel extends AbstractTableModel {
-        private String[] columnNames = {"ID", "用户", "套餐", "预约时间", "检查时间", "状态", "支付状态", "创建时间"};
+        private String[] columnNames = {"ID", "用户", "检查组", "预约时间", "检查时间", "状态", "支付状态", "创建时间"};
         private List<Appointment> data;
 
         public void setData(List<Appointment> data) {
@@ -179,9 +179,9 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
             switch (col) {
                 case 0: return appointment.getId();
                 case 1: return appointment.getUserName();
-                case 2: return appointment.getPackageName();
+                case 2: return appointment.getGroupName();
                 case 3: return appointment.getAppointmentTime();
-                case 4: return appointment.getExamTime();
+                case 4: return appointment.getExamDate();
                 case 5: return appointment.getStatus();
                 case 6: return appointment.getPaymentStatus() ? "已支付" : "未支付";
                 case 7: return appointment.getCreatedAt();

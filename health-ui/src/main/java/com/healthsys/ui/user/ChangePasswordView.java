@@ -1,19 +1,19 @@
-﻿package com.healthsys.common.view;
+package com.healthsys.ui.user;
 
-import com.healthsys.service.LoginController;
+import com.healthsys.service.AuthService;
 import com.healthsys.common.entity.Users;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class LoginView implements LoginController.LoginListener {
+public class ChangePasswordView implements AuthService.LoginListener {
     private JFrame loginFrame;
     private JTextField phoneField;
     private JPasswordField passwordField;
-    private LoginController loginController;
+    private AuthService loginController;
 
-    public LoginView() {
-        this.loginController = new LoginController();
+    public ChangePasswordView() {
+        this.loginController = new AuthService();
         this.loginController.setLoginListener(this);
     }
 

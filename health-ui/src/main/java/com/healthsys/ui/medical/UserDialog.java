@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.Users;
 import com.healthsys.ui.medical.CrudPanel;
@@ -15,7 +15,6 @@ public class UserDialog extends JDialog {
     private JTextField phoneField;
     private JTextField nameField;
     private JComboBox<String> genderComboBox;
-    private JComboBox<String> roleComboBox;
     private JTextField idNumberField;
     private JPasswordField passwordField;
     private JTextField birthDateField;
@@ -41,7 +40,7 @@ public class UserDialog extends JDialog {
         mainPanel.setBackground(Color.WHITE);
 
         // 表单面板
-        JPanel formPanel = new JPanel(new GridLayout(7, 2, 15, 15));
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 15, 15));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         formPanel.setBackground(Color.WHITE);
 
@@ -57,9 +56,8 @@ public class UserDialog extends JDialog {
 
         // 添加下拉框
         addComboBoxField(formPanel, "性别:", genderComboBox = createStyledComboBox(
-                new String[]{"MALE", "FEMALE"}), user.getGender(), labelFont);
-        addComboBoxField(formPanel, "角色:", roleComboBox = createStyledComboBox(
-                new String[]{"USER", "MEDICAL"}), user.getRole(), labelFont);
+                new String[]{"MALE", "FEMALE"}), user.getGenderDisplay(), labelFont);
+        // 移除角色字段 — 新架构通过doctors/admins表区分
 
         addFormField(formPanel, "身份证号:", idNumberField = createStyledTextField(user.getIdNumber(), fieldFont), labelFont);
 
@@ -149,8 +147,8 @@ public class UserDialog extends JDialog {
         user.setPhone(phoneField.getText());
         user.setPassword(new String(passwordField.getPassword()));
         user.setName(nameField.getText());
-        user.setGender((String) genderComboBox.getSelectedItem());
-        user.setRole((String) roleComboBox.getSelectedItem());
+        String genderStr = (String) genderComboBox.getSelectedItem();
+        user.setGender("MALE".equals(genderStr) ? 1 : "FEMALE".equals(genderStr) ? 2 : 0);
         user.setIdNumber(idNumberField.getText());
         return user;
     }

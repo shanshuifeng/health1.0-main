@@ -1,121 +1,85 @@
-﻿package com.healthsys.common.entity;
+package com.healthsys.common.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Users {
-    private Long id;
+    private Long userId;
     private String phone;
-    private String password;
-    private String name;
+    private String passwordHash;
+    private String realName;
+    private String idCard;
+    private Integer gender; // 0-未知 1-男 2-女
     private LocalDate birthDate;
-    private String gender; // "MALE","FEMALE","OTHER"
-    private String role;   // "USER","MEDICAL"
-    private String idNumber;
-    private boolean firstLogin = true;
+    private Integer status; // 1-正常 0-禁用
+    private Boolean firstLogin = true;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Users() {}
 
-    public Users(Long id, String phone, String password, String name, LocalDate birthDate,
-                 String gender, String role, String idNumber, boolean firstLogin) {
-        this.id = id;
+    public Users(Long userId, String phone, String passwordHash, String realName,
+                 String idCard, Integer gender, LocalDate birthDate, Integer status, Boolean firstLogin) {
+        this.userId = userId;
         this.phone = phone;
-        this.password = password;
-        this.name = name;
-        this.birthDate = birthDate;
+        this.passwordHash = passwordHash;
+        this.realName = realName;
+        this.idCard = idCard;
         this.gender = gender;
-        this.role = role;
-        this.idNumber = idNumber;
+        this.birthDate = birthDate;
+        this.status = status;
         this.firstLogin = firstLogin;
     }
 
-    public Long getId() {
-        return id;
+    public String getGenderDisplay() {
+        return switch (gender != null ? gender : 0) {
+            case 1 -> "男";
+            case 2 -> "女";
+            default -> "未知";
+        };
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    // Getters and Setters
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
-    public String getPhone() {
-        return phone;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
-    public String getPassword() {
-        return password;
-    }
+    public String getRealName() { return realName; }
+    public void setRealName(String realName) { this.realName = realName; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public String getIdCard() { return idCard; }
+    public void setIdCard(String idCard) { this.idCard = idCard; }
 
-    public String getName() {
-        return name;
-    }
+    public Integer getGender() { return gender; }
+    public void setGender(Integer gender) { this.gender = gender; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public LocalDate getBirthDate() { return birthDate; }
+    public void setBirthDate(LocalDate birthDate) { this.birthDate = birthDate; }
 
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
+    public Boolean isFirstLogin() { return firstLogin; }
+    public void setFirstLogin(Boolean firstLogin) { this.firstLogin = firstLogin; }
 
-    public String getGender() {
-        return gender;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getIdNumber() {
-        return idNumber;
-    }
-
-    public void setIdNumber(String idNumber) {
-        this.idNumber = idNumber;
-    }
-
-    public boolean isFirstLogin() {
-        return firstLogin;
-    }
-
-    public void setFirstLogin(boolean firstLogin) {
-        this.firstLogin = firstLogin;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    // 兼容旧代码的别名方法
+    public Long getId() { return userId; }
+    public void setId(Long id) { this.userId = id; }
+    public String getPassword() { return passwordHash; }
+    public void setPassword(String password) { this.passwordHash = password; }
+    public String getName() { return realName; }
+    public void setName(String name) { this.realName = name; }
+    public String getIdNumber() { return idCard; }
+    public void setIdNumber(String idNumber) { this.idCard = idNumber; }
 }

@@ -1,146 +1,80 @@
-﻿package com.healthsys.common.entity;
+package com.healthsys.common.entity;
 
 import java.time.LocalDateTime;
 
+/**
+ * 检查结果明细表 (check_results)
+ */
 public class ExamRecord {
-    private Long id;
-    private Long userId;          // 用户ID
-    private Long groupId;         // 检查组ID
-    private Long itemId;          // 检查项ID
+    private Long resultId;
     private Long appointmentId;   // 预约ID
-    private Long testId;          // 测试ID
-    private String resultValue;   // 检查结果
-    private LocalDateTime examDate; // 体检时间
-    private LocalDateTime createdAt; // 创建时间
+    private Long itemId;           // 检查项ID
+    private Long doctorId;         // 录入医生ID
+    private String resultValue;    // 检查结果值
+    private Boolean isAbnormal;    // 是否异常
+    private String doctorNote;     // 医生备注
+    private LocalDateTime examDate; // 体检执行时间
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    // 显示用字段
-    private String userName;      // 用户名
-    private String groupName;     // 检查组名称
-    private String itemName;      // 检查项名称
+    // 显示用字段（JOIN查询填充）
+    private String userName;
+    private String groupName;
+    private String itemName;
 
     public ExamRecord() {}
 
-    public ExamRecord(Long id, Long appointmentId, Long testId, String resultValue, LocalDateTime examDate) {
-        this.id = id;
+    public ExamRecord(Long resultId, Long appointmentId, Long itemId, String resultValue, LocalDateTime examDate) {
+        this.resultId = resultId;
         this.appointmentId = appointmentId;
-        this.testId = testId;
+        this.itemId = itemId;
         this.resultValue = resultValue;
         this.examDate = examDate;
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getResultId() { return resultId; }
+    public void setResultId(Long resultId) { this.resultId = resultId; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getAppointmentId() { return appointmentId; }
+    public void setAppointmentId(Long appointmentId) { this.appointmentId = appointmentId; }
 
-    public Long getUserId() {
-        return userId;
-    }
+    public Long getItemId() { return itemId; }
+    public void setItemId(Long itemId) { this.itemId = itemId; }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    public Long getDoctorId() { return doctorId; }
+    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
 
-    public Long getGroupId() {
-        return groupId;
-    }
+    public String getResultValue() { return resultValue; }
+    public void setResultValue(String resultValue) { this.resultValue = resultValue; }
 
-    public void setGroupId(Long groupId) {
-        this.groupId = groupId;
-    }
+    public Boolean getIsAbnormal() { return isAbnormal; }
+    public void setIsAbnormal(Boolean isAbnormal) { this.isAbnormal = isAbnormal; }
 
-    public Long getItemId() {
-        return itemId;
-    }
+    public String getDoctorNote() { return doctorNote; }
+    public void setDoctorNote(String doctorNote) { this.doctorNote = doctorNote; }
 
-    public void setItemId(Long itemId) {
-        this.itemId = itemId;
-    }
+    public LocalDateTime getExamDate() { return examDate; }
+    public void setExamDate(LocalDateTime examDate) { this.examDate = examDate; }
 
-    public Long getAppointmentId() {
-        return appointmentId;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setAppointmentId(Long appointmentId) {
-        this.appointmentId = appointmentId;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public Long getTestId() {
-        return testId;
-    }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
 
-    public void setTestId(Long testId) {
-        this.testId = testId;
-    }
+    public String getGroupName() { return groupName; }
+    public void setGroupName(String groupName) { this.groupName = groupName; }
 
-    public String getResultValue() {
-        return resultValue;
-    }
+    public String getItemName() { return itemName; }
+    public void setItemName(String itemName) { this.itemName = itemName; }
 
-    public void setResultValue(String resultValue) {
-        this.resultValue = resultValue;
-    }
-
-    public LocalDateTime getExamDate() {
-        return examDate;
-    }
-
-    public void setExamDate(LocalDateTime examDate) {
-        this.examDate = examDate;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getGroupName() {
-        return groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-
-    public String getItemName() {
-        return itemName;
-    }
-
-    public void setItemName(String itemName) {
-        this.itemName = itemName;
-    }
-
-    @Override
-    public String toString() {
-        return "ExamRecord{" +
-                "id=" + id +
-                ", userId=" + userId +
-                ", groupId=" + groupId +
-                ", itemId=" + itemId +
-                ", appointmentId=" + appointmentId +
-                ", testId=" + testId +
-                ", resultValue='" + resultValue + '\'' +
-                ", examDate=" + examDate +
-                ", createdAt=" + createdAt +
-                ", userName='" + userName + '\'' +
-                ", groupName='" + groupName + '\'' +
-                ", itemName='" + itemName + '\'' +
-                '}';
-    }
+    // 兼容旧代码的别名
+    public Long getId() { return resultId; }
+    public void setId(Long id) { this.resultId = id; }
+    public Long getTestId() { return itemId; }
+    public void setTestId(Long testId) { this.itemId = testId; }
 }
-

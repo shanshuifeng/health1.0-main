@@ -1,84 +1,70 @@
-﻿package com.healthsys.common.entity;
+package com.healthsys.common.entity;
 
 import java.time.LocalDateTime;
 
 public class CheckItem {
-    private Long id;
-    private String name;
+    private Long itemId;
+    private String itemName;
     private String code;
-    private String description;
-    private String normalRange;
+    private String category;        // 所属科室/分类
+    private String unit;            // 计量单位
+    private String referenceRange;  // 正常参考值范围
     private Double price;
+    private Integer status;         // 1-启用 0-停用
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public CheckItem() {}
 
-    public CheckItem(Long id, String name, String code, String description,
-                     String normalRange, Double price, LocalDateTime createdAt) {
-        this.id = id;
-        this.name = name;
+    public CheckItem(Long itemId, String itemName, String code, String category,
+                     String referenceRange, Double price, LocalDateTime createdAt) {
+        this.itemId = itemId;
+        this.itemName = itemName;
         this.code = code;
-        this.description = description;
-        this.normalRange = normalRange;
+        this.category = category;
+        this.referenceRange = referenceRange;
         this.price = price;
         this.createdAt = createdAt;
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getItemId() { return itemId; }
+    public void setItemId(Long itemId) { this.itemId = itemId; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getItemName() { return itemName; }
+    public void setItemName(String itemName) { this.itemName = itemName; }
 
-    public String getName() {
-        return name;
-    }
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public String getCode() {
-        return code;
-    }
+    public String getUnit() { return unit; }
+    public void setUnit(String unit) { this.unit = unit; }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
+    public String getReferenceRange() { return referenceRange; }
+    public void setReferenceRange(String referenceRange) { this.referenceRange = referenceRange; }
 
-    public String getDescription() {
-        return description;
-    }
+    public Double getPrice() { return price; }
+    public void setPrice(Double price) { this.price = price; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 
-    public String getNormalRange() {
-        return normalRange;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setNormalRange(String normalRange) {
-        this.normalRange = normalRange;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    // 兼容旧代码的别名方法
+    public Long getId() { return itemId; }
+    public void setId(Long id) { this.itemId = id; }
+    public String getName() { return itemName; }
+    public void setName(String name) { this.itemName = name; }
+    public String getDescription() { return category; }
+    public void setDescription(String desc) { this.category = desc; }
+    public String getNormalRange() { return referenceRange; }
+    public void setNormalRange(String range) { this.referenceRange = range; }
 }
-

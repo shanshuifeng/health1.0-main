@@ -1,4 +1,4 @@
-﻿package com.healthsys.service;
+package com.healthsys.service;
 
 import com.healthsys.dao.UserDAO;
 import com.healthsys.common.entity.Users;

@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.CheckItem;
 import com.healthsys.common.entity.CheckItemGroup;
@@ -13,7 +13,7 @@ public class PackageDetailsDialog extends JDialog {
     private final Color MAIN_COLOR = new Color(70, 104, 197);
 
     public PackageDetailsDialog(CheckItemGroup packageItem, List<CheckItem> items) {
-        setTitle("体检套餐详情 - " + packageItem.getName());
+        setTitle("检查组详情 - " + packageItem.getName());
         setSize(800, 600);
         setLocationRelativeTo(null);
         setModal(true);
@@ -23,15 +23,15 @@ public class PackageDetailsDialog extends JDialog {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         mainPanel.setBackground(Color.WHITE);
 
-        // 套餐基本信息面板
+        // 检查组基本信息面板
         JPanel infoPanel = new JPanel(new GridLayout(4, 2, 10, 10));
-        infoPanel.setBorder(BorderFactory.createTitledBorder("套餐基本信息"));
+        infoPanel.setBorder(BorderFactory.createTitledBorder("检查组基本信息"));
         infoPanel.setBackground(Color.WHITE);
 
-        addInfoField(infoPanel, "套餐ID:", packageItem.getId().toString());
-        addInfoField(infoPanel, "套餐名称:", packageItem.getName());
-        addInfoField(infoPanel, "套餐描述:", packageItem.getDescription());
-        addInfoField(infoPanel, "套餐价格:", String.format("¥%.2f", packageItem.getPrice()));
+        addInfoField(infoPanel, "检查组ID:", packageItem.getId().toString());
+        addInfoField(infoPanel, "检查组名称:", packageItem.getName());
+        addInfoField(infoPanel, "检查组描述:", packageItem.getDescription());
+        addInfoField(infoPanel, "检查组价格:", String.format("¥%.2f", packageItem.getPrice()));
 
         mainPanel.add(infoPanel, BorderLayout.NORTH);
 

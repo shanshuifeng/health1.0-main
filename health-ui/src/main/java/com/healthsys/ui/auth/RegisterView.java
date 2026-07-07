@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.auth;
+package com.healthsys.ui.auth;
 
 import com.healthsys.dao.UserDAO;
 import com.healthsys.common.entity.Users;
@@ -92,11 +92,13 @@ public class RegisterView extends JFrame {
             Users newUser = new Users();
             newUser.setName(nameField.getText().trim());
             newUser.setPassword(new String(passwordField.getPassword()));
-            newUser.setRole("patient");
+            newUser.setStatus(1);
 
             newUser.setPhone(phoneField.getText().trim());
             newUser.setBirthDate(birthDateChooser.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-            newUser.setGender((String) genderComboBox.getSelectedItem());
+            String genderStr = (String) genderComboBox.getSelectedItem();
+            int genderVal = "MALE".equals(genderStr) ? 1 : "FEMALE".equals(genderStr) ? 2 : 0;
+            newUser.setGender(genderVal);
 
             UserDAO userDAO = new UserDAO();
             if (userDAO.addUser(newUser)) {

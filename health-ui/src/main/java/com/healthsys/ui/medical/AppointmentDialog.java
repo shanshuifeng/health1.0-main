@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.Appointment;
 import com.healthsys.ui.medical.CrudPanel;
@@ -22,7 +22,7 @@ public class AppointmentDialog extends JDialog {
 
     // 对话框组件
     private JTextField userIdField;
-    private JTextField packageIdField;
+    private JTextField groupIdField;
     private JComboBox<String> statusComboBox;
     private JCheckBox paymentStatusCheckBox;
     private JDateChooser appointmentDateChooser;
@@ -57,10 +57,10 @@ public class AppointmentDialog extends JDialog {
                 )
         );
 
-        // 套餐ID字段
-        addFormField(formPanel, "套餐ID:",
-                packageIdField = createStyledTextField(
-                        appointment.getPackageId() != null ? appointment.getPackageId().toString() : ""
+        // 检查组ID字段
+        addFormField(formPanel, "检查组ID:",
+                groupIdField = createStyledTextField(
+                        appointment.getGroupId() != null ? appointment.getGroupId().toString() : ""
                 )
         );
 
@@ -131,9 +131,9 @@ public class AppointmentDialog extends JDialog {
             }
         } else {
             examDateChooser = dateChooser;
-            if (appointment.getExamTime() != null) {
+            if (appointment.getExamDate() != null) {
                 dateChooser.setDate(Date.from(
-                        appointment.getExamTime().atZone(ZoneId.systemDefault()).toInstant()
+                        appointment.getExamDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
                 ));
             }
         }
@@ -187,9 +187,9 @@ public class AppointmentDialog extends JDialog {
 
     private boolean validateInput() {
         try {
-            // 验证用户ID和套餐ID
+            // 验证用户ID和检查组ID
             Long.parseLong(userIdField.getText());
-            Long.parseLong(packageIdField.getText());
+            Long.parseLong(groupIdField.getText());
 
             // 验证预约时间和检查时间
             if (appointmentDateChooser.getDate() == null) {
@@ -204,7 +204,7 @@ public class AppointmentDialog extends JDialog {
 
             return true;
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "请输入有效的用户ID和套餐ID", "错误", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "请输入有效的用户ID和检查组ID", "错误", JOptionPane.ERROR_MESSAGE);
             return false;
         }
     }
@@ -216,15 +216,15 @@ public class AppointmentDialog extends JDialog {
 
     public Appointment getAppointment() {
         appointment.setUserId(Long.parseLong(userIdField.getText()));
-        appointment.setPackageId(Long.parseLong(packageIdField.getText()));
+        appointment.setGroupId(Long.parseLong(groupIdField.getText()));
         appointment.setAppointmentTime(
                 appointmentDateChooser.getDate().toInstant()
                         .atZone(ZoneId.systemDefault()).toLocalDateTime()
         );
-        appointment.setExamTime(
-                examDateChooser.getDate().toInstant()
-                        .atZone(ZoneId.systemDefault()).toLocalDateTime()
-        );
+        java.time.LocalDateTime examDateTime = examDateChooser.getDate().toInstant()
+                .atZone(ZoneId.systemDefault()).toLocalDateTime();
+        appointment.setExamDate(examDateTime.toLocalDate());
+        appointment.setExamTimeSlot(examDateTime.getHour() < 12 ? "上午" : "下午");
         appointment.setStatus((String) statusComboBox.getSelectedItem());
         appointment.setPaymentStatus(paymentStatusCheckBox.isSelected());
         return appointment;

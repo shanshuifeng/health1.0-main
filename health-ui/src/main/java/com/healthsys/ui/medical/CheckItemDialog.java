@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui.medical;
+package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.CheckItem;
 import com.healthsys.ui.medical.CrudPanel;

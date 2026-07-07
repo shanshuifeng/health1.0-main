@@ -1,8 +1,8 @@
-﻿package com.healthsys.common.view;
+package com.healthsys.ui.user;
 
-import com.healthsys.service.AppointmentController;
+import com.healthsys.service.AppointmentService;
 import com.healthsys.service.ExamRecordCellRenderer;
-import com.healthsys.service.ExamRecordController;
+import com.healthsys.service.ExamService;
 import com.healthsys.common.entity.Appointment;
 import com.healthsys.common.entity.ExamRecord;
 import com.healthsys.common.entity.CheckItem;
@@ -16,12 +16,12 @@ import java.util.List;
 
 public class ExamRecordView {
     private JPanel healthPanel;
-    private ExamRecordController examRecordController;
-    private AppointmentController appointmentController;
+    private ExamService examRecordController;
+    private AppointmentService appointmentController;
 
     public ExamRecordView(Appointment dummyAppointment) {
-        this.examRecordController = new ExamRecordController();
-        this.appointmentController = new AppointmentController();
+        this.examRecordController = new ExamService();
+        this.appointmentController = new AppointmentService();
         initializeUI(dummyAppointment);
     }
 
@@ -31,19 +31,19 @@ public class ExamRecordView {
 
 
         // 表格模型定义
-        String[] columnNames = {"预约ID", "套餐名称", "项目名称", "结果", "单位", "正常范围", "体检时间"};
+        String[] columnNames = {"预约ID", "检查组名称", "项目名称", "结果", "单位", "正常范围", "体检时间"};
         DefaultTableModel model = new DefaultTableModel(columnNames, 0);
         JTable table = new JTable(model);
 
         // 设置自动调整模式
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
-        // 设置自定义渲染器（仅对“结果”列）
+        // 设置自定义渲染器（仅对"结果"列）
         table.getColumnModel().getColumn(3).setCellRenderer(new ExamRecordCellRenderer());
 
         // 手动调整列宽
         table.getColumnModel().getColumn(0).setPreferredWidth(10);  // 预约ID
-        table.getColumnModel().getColumn(1).setPreferredWidth(60); // 套餐名称
+        table.getColumnModel().getColumn(1).setPreferredWidth(60); // 检查组名称
         table.getColumnModel().getColumn(2).setPreferredWidth(60); // 项目名称
         table.getColumnModel().getColumn(3).setPreferredWidth(180); // 结果
         table.getColumnModel().getColumn(4).setPreferredWidth(50);  // 单位
@@ -64,26 +64,26 @@ public class ExamRecordView {
         List<Appointment> completedAppointments = appointmentController.getUserAppointmentsByStatus(userId, "COMPLETED");
 
         for (Appointment appointment : completedAppointments) {
-            Long packageId = appointment.getPackageId();
+            Long groupId = appointment.getGroupId();
 
             CheckItemGroup checkItemGroup = null;
-            if (packageId != null) {
-                checkItemGroup = appointmentController.getTestPackageById(packageId);
+            if (groupId != null) {
+                checkItemGroup = appointmentController.getCheckItemGroupById(groupId);
             }
 
-            String packageName = checkItemGroup != null ? checkItemGroup.getName() : "通用项目";
+            String groupName = checkItemGroup != null ? checkItemGroup.getName() : "通用项目";
 
             List<ExamRecord> records = examRecordController.getExamRecordsByAppointment(appointment.getId());
 
             for (ExamRecord record : records) {
-                CheckItem checkItem = appointmentController.getMedicalTestById(record.getTestId());
+                CheckItem checkItem = appointmentController.getCheckItemById(record.getTestId());
                 String testName = checkItem != null ? checkItem.getName() : "未知项目";
                 String unit = checkItem != null ? checkItem.getNormalRange().split(":")[1].replaceAll("[\\d.-]+", "").trim() : "";
                 String normalRange = checkItem != null ? checkItem.getNormalRange() : "";
 
                 Object[] row = {
                         appointment.getId(),
-                        packageName,
+                        groupName,
                         testName,
                         record.getResultValue(),
                         unit,

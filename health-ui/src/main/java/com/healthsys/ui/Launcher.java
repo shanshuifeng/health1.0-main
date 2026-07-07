@@ -1,4 +1,4 @@
-﻿package com.healthsys.ui;
+package com.healthsys.ui;
 
 import com.healthsys.ui.auth.LoginView;
 
