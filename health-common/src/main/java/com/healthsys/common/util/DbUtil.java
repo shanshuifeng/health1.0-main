@@ -16,7 +16,7 @@ public class DbUtil {
                 props.load(input);
             } else {
                 // 配置文件不存在时使用默认值（开发环境）
-                props.setProperty("db.url", "jdbc:mysql://localhost:3306/healthsys?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8");
+                props.setProperty("db.url", "jdbc:mysql://localhost:3307/healthsys?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8");
                 props.setProperty("db.user", "root");
                 props.setProperty("db.password", "");
             }
