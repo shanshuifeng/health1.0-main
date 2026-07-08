@@ -1,22 +1,30 @@
 package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.Appointment;
-import com.healthsys.ui.medical.AppointmentDialog;
 import com.healthsys.dao.AppointmentDAO;
+import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 
 public class AppointmentPanel extends CrudPanel<Appointment> {
+    private final Long doctorId;
     private AppointmentDAO appointmentDAO;
     private JTable table;
     private AppointmentTableModel tableModel;
     private JTextField userNameSearchField;
+    private JDateChooser dateFromChooser;
+    private JDateChooser dateToChooser;
+    private JComboBox<String> statusFilterCombo;
 
-    public AppointmentPanel() {
+    public AppointmentPanel(Long doctorId) {
+        this.doctorId = doctorId;
         appointmentDAO = new AppointmentDAO();
         initializeTable();
         refreshData();
@@ -25,87 +33,110 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
     }
 
     private void setupSearchPanel() {
-        // 添加查询字段
-        getSearchPanel().add(new JLabel("用户名:"));
-        userNameSearchField = new JTextField(15);
-        getSearchPanel().add(userNameSearchField);
+        JPanel sp = getSearchPanel();
 
+        sp.add(new JLabel("日期从:"));
+        dateFromChooser = new JDateChooser();
+        dateFromChooser.setPreferredSize(new Dimension(120, 25));
+        dateFromChooser.setDate(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        sp.add(dateFromChooser);
 
-        // 设置查询按钮事件
+        sp.add(new JLabel("到:"));
+        dateToChooser = new JDateChooser();
+        dateToChooser.setPreferredSize(new Dimension(120, 25));
+        dateToChooser.setDate(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        sp.add(dateToChooser);
+
+        sp.add(new JLabel("状态:"));
+        statusFilterCombo = new JComboBox<>(new String[]{"全部", "待检查", "已确认", "已完成", "已取消"});
+        statusFilterCombo.setPreferredSize(new Dimension(90, 25));
+        statusFilterCombo.setFont(new Font("微软雅黑", Font.PLAIN, 12));
+        sp.add(statusFilterCombo);
+
+        sp.add(new JLabel("用户:"));
+        userNameSearchField = new JTextField(8);
+        sp.add(userNameSearchField);
+
         getSearchButton().addActionListener(e -> searchAppointments());
     }
 
     private void searchAppointments() {
+        Date fromDate = dateFromChooser.getDate();
+        Date toDate = dateToChooser.getDate();
+        final LocalDate dateFrom = fromDate != null
+                ? fromDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+        final LocalDate dateTo = toDate != null
+                ? toDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+
+        String statusDisplay = (String) statusFilterCombo.getSelectedItem();
+        String status = statusToCode(statusDisplay);
+
         String userName = userNameSearchField.getText().trim();
 
-        List<Appointment> result = appointmentDAO.search(userName);
+        List<Appointment> result;
+        if (!userName.isEmpty()) {
+            result = appointmentDAO.search(userName);
+            if (dateFrom != null || dateTo != null || status != null) {
+                result = result.stream().filter(a -> {
+                    boolean match = true;
+                    if (dateFrom != null && a.getExamDate() != null && a.getExamDate().isBefore(dateFrom)) match = false;
+                    if (dateTo != null && a.getExamDate() != null && a.getExamDate().isAfter(dateTo)) match = false;
+                    if (status != null && !status.equals(a.getStatus())) match = false;
+                    return match;
+                }).toList();
+            }
+        } else {
+            result = appointmentDAO.searchByFilters(null, dateFrom, dateTo, status);
+        }
         tableModel.setData(result);
         tableModel.fireTableDataChanged();
     }
 
+    private String statusToCode(String display) {
+        return switch (display) {
+            case "待检查" -> "PENDING";
+            case "已确认" -> "CONFIRMED";
+            case "已完成" -> "COMPLETED";
+            case "已取消" -> "CANCELLED";
+            default -> null;
+        };
+    }
+
     private void setupButtonListeners() {
-        // 添加按钮事件
-        getAddButton().addActionListener(e -> {
-            AppointmentDialog dialog = new AppointmentDialog(null);
-            if (dialog.showDialog() == AppointmentDialog.OK_OPTION) {
-                Appointment newAppointment = dialog.getAppointment();
-                if (appointmentDAO.add(newAppointment)) {
-                    refreshData();
-                    JOptionPane.showMessageDialog(this, "预约添加成功", "成功", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, "预约添加失败", "错误", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
+        // 医生端不需要添加/编辑/删除预约，隐藏这些按钮
+        getAddButton().setVisible(false);
+        getEditButton().setVisible(false);
+        getDeleteButton().setVisible(false);
 
-        // 编辑按钮事件
-        getEditButton().addActionListener(e -> {
+        // 开始检查按钮
+        JButton startExamBtn = CrudPanel.createStyledButton("开始检查", new Color(102, 204, 153));
+        startExamBtn.addActionListener(e -> {
             Appointment selected = getSelectedAppointment();
             if (selected == null) {
-                JOptionPane.showMessageDialog(this, "请先选择要编辑的预约", "提示", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "请先选择要检查的预约", "提示", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-
-            AppointmentDialog dialog = new AppointmentDialog(selected);
-            if (dialog.showDialog() == AppointmentDialog.OK_OPTION) {
-                Appointment updatedAppointment = dialog.getAppointment();
-                if (appointmentDAO.update(updatedAppointment)) {
-                    refreshData();
-                    JOptionPane.showMessageDialog(this, "预约更新成功", "成功", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, "预约更新失败", "错误", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
-
-        // 删除按钮事件
-        getDeleteButton().addActionListener(e -> {
-            Appointment selected = getSelectedAppointment();
-            if (selected == null) {
-                JOptionPane.showMessageDialog(this, "请先选择要删除的预约", "提示", JOptionPane.WARNING_MESSAGE);
+            if ("COMPLETED".equals(selected.getStatus())) {
+                JOptionPane.showMessageDialog(this, "该预约已完成检查", "提示", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-
-            int confirm = JOptionPane.showConfirmDialog(this,
-                    "确定要删除预约ID为 " + selected.getId() + " 的记录吗?",
-                    "确认删除", JOptionPane.YES_NO_OPTION);
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                if (appointmentDAO.delete(selected.getId())) {
-                    refreshData();
-                    JOptionPane.showMessageDialog(this, "预约删除成功", "成功", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, "预约删除失败", "错误", JOptionPane.ERROR_MESSAGE);
-                }
+            if ("CANCELLED".equals(selected.getStatus())) {
+                JOptionPane.showMessageDialog(this, "该预约已取消", "提示", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            ExamResultEntryDialog dialog = new ExamResultEntryDialog(doctorId, selected);
+            if (dialog.showDialog() == ExamResultEntryDialog.OK_OPTION) {
+                refreshData();
             }
         });
+        JPanel buttonPanel = (JPanel) getAddButton().getParent();
+        buttonPanel.add(startExamBtn, 0);
     }
 
     private void initializeTable() {
         tableModel = new AppointmentTableModel();
         table = new JTable(tableModel);
 
-        // 表格样式优化
         table.setFont(new Font("微软雅黑", Font.PLAIN, 13));
         table.getTableHeader().setFont(new Font("微软雅黑", Font.BOLD, 14));
         table.setRowHeight(30);
@@ -114,7 +145,6 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
         table.setSelectionBackground(new Color(220, 240, 255));
         table.setSelectionForeground(Color.BLACK);
 
-        // 隔行变色
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -128,7 +158,6 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
             }
         });
 
-        // 列宽自动调整
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         JScrollPane scrollPane = new JScrollPane(table);
@@ -138,7 +167,9 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
 
     @Override
     public void refreshData() {
-        tableModel.setData(appointmentDAO.getAll());
+        LocalDate today = LocalDate.now();
+        List<Appointment> result = appointmentDAO.searchByFilters(null, today, today, null);
+        tableModel.setData(result);
         tableModel.fireTableDataChanged();
     }
 
@@ -151,7 +182,7 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
     }
 
     private class AppointmentTableModel extends AbstractTableModel {
-        private String[] columnNames = {"ID", "用户", "检查组", "预约时间", "检查时间", "状态", "支付状态", "创建时间"};
+        private String[] columnNames = {"ID", "用户", "检查组", "负责医生", "预约时间", "检查时间", "状态", "支付状态", "创建时间"};
         private List<Appointment> data;
 
         public void setData(List<Appointment> data) {
@@ -180,11 +211,12 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
                 case 0: return appointment.getId();
                 case 1: return appointment.getUserName();
                 case 2: return appointment.getGroupName();
-                case 3: return appointment.getAppointmentTime();
-                case 4: return appointment.getExamDate();
-                case 5: return appointment.getStatus();
-                case 6: return appointment.getPaymentStatus() ? "已支付" : "未支付";
-                case 7: return appointment.getCreatedAt();
+                case 3: return appointment.getDoctorName() != null ? appointment.getDoctorName() : "";
+                case 4: return appointment.getAppointmentTime();
+                case 5: return appointment.getExamDate();
+                case 6: return appointment.getStatusDisplay();
+                case 7: return appointment.getPaymentStatusDisplay();
+                case 8: return appointment.getCreatedAt();
                 default: return null;
             }
         }

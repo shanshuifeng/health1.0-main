@@ -213,13 +213,13 @@ public class LoginView extends JFrame {
         if ("ADMIN".equals(user.getRole())) {
             openAdminInterface();
         } else if ("DOCTOR".equals(user.getRole())) {
-            openMedicalInterface();
+            openMedicalInterface(user);
         } else {
             openUserInterface(user);
         }
     }
 
-    private void openMedicalInterface() {
+    private void openMedicalInterface(Users user) {
         try {
             SwingUtilities.invokeLater(() -> {
                 JFrame frame = new JFrame("医疗健康管理系统");
@@ -228,7 +228,7 @@ public class LoginView extends JFrame {
                 frame.setLocationRelativeTo(null);
 
                 com.healthsys.ui.medical.MainView panel =
-                        new com.healthsys.ui.medical.MainView();
+                        new com.healthsys.ui.medical.MainView(user.getUserId(), user.getRealName());
                 frame.add(panel);
                 frame.setVisible(true);
             });

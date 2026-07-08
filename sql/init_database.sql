@@ -16,10 +16,10 @@ USE healthsys;
 -- 1.1 普通用户表
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户唯一标识',
-    phone VARCHAR(20) UNIQUE NOT NULL COMMENT '手机号（登录账号，AES加密存储）',
-    password_hash VARCHAR(255) NOT NULL COMMENT 'AES加密密码',
+    phone VARCHAR(20) UNIQUE NOT NULL COMMENT '手机号（登录账号）',
+    password_hash VARCHAR(255) NOT NULL COMMENT '登录密码（明文）',
     real_name VARCHAR(50) COMMENT '真实姓名',
-    id_card VARCHAR(18) COMMENT '身份证号（AES加密）',
+    id_card VARCHAR(18) COMMENT '身份证号',
     gender TINYINT DEFAULT 0 COMMENT '性别: 0-未知 1-男 2-女',
     birth_date DATE COMMENT '出生日期',
     status TINYINT DEFAULT 1 COMMENT '状态: 1-正常 0-禁用',
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS doctors (
     doctor_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '医生唯一标识',
     username VARCHAR(50) UNIQUE NOT NULL COMMENT '工号（登录账号）',
-    password_hash VARCHAR(255) NOT NULL COMMENT 'AES加密密码',
+    password_hash VARCHAR(255) NOT NULL COMMENT '登录密码（明文）',
     name VARCHAR(50) NOT NULL COMMENT '姓名',
     department VARCHAR(100) COMMENT '所属科室',
     title VARCHAR(50) COMMENT '职称（主治/副主任等）',
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS doctors (
 CREATE TABLE IF NOT EXISTS admins (
     admin_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '管理员唯一标识',
     username VARCHAR(50) UNIQUE NOT NULL COMMENT '登录账号',
-    password_hash VARCHAR(255) NOT NULL COMMENT 'AES加密密码',
+    password_hash VARCHAR(255) NOT NULL COMMENT '登录密码（明文）',
     real_name VARCHAR(50) NOT NULL COMMENT '真实姓名',
     role VARCHAR(20) DEFAULT 'MANAGER' COMMENT '角色: SUPER_ADMIN / MANAGER',
     phone VARCHAR(20) COMMENT '联系电话',
@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     appointment_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '预约唯一标识',
     user_id BIGINT NOT NULL COMMENT '用户ID',
     group_id BIGINT NOT NULL COMMENT '检查组ID',
+    doctor_id BIGINT COMMENT '负责医生ID',
     appointment_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '预约创建时间',
     exam_date DATE NOT NULL COMMENT '体检预约日期',
     exam_time_slot VARCHAR(20) COMMENT '时段（上午/下午）',
@@ -111,8 +112,10 @@ CREATE TABLE IF NOT EXISTS appointments (
     INDEX idx_app_user_date (user_id, exam_date) COMMENT '加速用户预约列表查询',
     INDEX idx_app_status (status) COMMENT '加速状态筛选',
     INDEX idx_app_exam_date (exam_date) COMMENT '加速医生今日预约列表查询',
+    INDEX idx_app_doctor (doctor_id) COMMENT '加速医生预约查询',
     CONSTRAINT fk_app_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_app_group FOREIGN KEY (group_id) REFERENCES check_groups(group_id) ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_app_group FOREIGN KEY (group_id) REFERENCES check_groups(group_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_app_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预约表';
 
 -- 2.5 检查结果明细表

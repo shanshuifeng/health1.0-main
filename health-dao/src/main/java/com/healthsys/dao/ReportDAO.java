@@ -86,6 +86,30 @@ public class ReportDAO {
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
+    public List<Report> getByDoctorIdWithJoin(Long doctorId) {
+        List<Report> list = new ArrayList<>();
+        String sql = "SELECT r.*, d.name as doctor_name, u.real_name as user_name, a.exam_date " +
+                "FROM reports r " +
+                "LEFT JOIN doctors d ON r.doctor_id = d.doctor_id " +
+                "LEFT JOIN appointments a ON r.appointment_id = a.appointment_id " +
+                "LEFT JOIN users u ON a.user_id = u.user_id " +
+                "WHERE r.doctor_id = ? " +
+                "ORDER BY r.upload_time DESC";
+        try (Connection conn = DbUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, doctorId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Report r = mapRow(rs);
+                    try { r.setDoctorName(rs.getString("doctor_name")); } catch (SQLException ignored) {}
+                    try { r.setUserName(rs.getString("user_name")); } catch (SQLException ignored) {}
+                    list.add(r);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     private Report mapRow(ResultSet rs) throws SQLException {
         Report r = new Report();
         r.setReportId(rs.getLong("report_id"));

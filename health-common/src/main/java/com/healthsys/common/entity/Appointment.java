@@ -7,6 +7,7 @@ public class Appointment {
     private Long appointmentId;
     private Long userId;
     private Long groupId;
+    private Long doctorId;
     private LocalDateTime appointmentTime;
     private LocalDate examDate;          // 体检预约日期
     private String examTimeSlot;         // 时段（上午/下午）
@@ -18,6 +19,7 @@ public class Appointment {
     // 显示用字段（JOIN查询填充）
     private String userName;
     private String groupName;
+    private String doctorName;
 
     public Appointment() {}
 
@@ -53,6 +55,9 @@ public class Appointment {
     public Long getGroupId() { return groupId; }
     public void setGroupId(Long groupId) { this.groupId = groupId; }
 
+    public Long getDoctorId() { return doctorId; }
+    public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
+
     public LocalDateTime getAppointmentTime() { return appointmentTime; }
     public void setAppointmentTime(LocalDateTime appointmentTime) { this.appointmentTime = appointmentTime; }
 
@@ -79,6 +84,9 @@ public class Appointment {
 
     public String getGroupName() { return groupName; }
     public void setGroupName(String groupName) { this.groupName = groupName; }
+
+    public String getDoctorName() { return doctorName; }
+    public void setDoctorName(String doctorName) { this.doctorName = doctorName; }
 
     // 兼容旧代码的别名方法
     public Long getId() { return appointmentId; }
