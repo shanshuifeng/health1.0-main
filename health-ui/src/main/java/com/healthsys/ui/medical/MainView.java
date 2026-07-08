@@ -18,55 +18,82 @@ public class MainView extends JPanel {
         setLayout(new BorderLayout());
         setBackground(new Color(245, 245, 245));
 
-        // 创建侧边栏 - 风格与第一次代码一致
         createSidebar();
-
-        // 创建内容区域
         createContentArea();
-
-        // 显示首页
         showHome();
+    }
+
+    private JFrame getParentFrame() {
+        Container parent = getParent();
+        while (parent != null && !(parent instanceof JFrame)) {
+            parent = parent.getParent();
+        }
+        return (JFrame) parent;
     }
 
     private void createSidebar() {
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBackground(new Color(70, 104, 197)); // 使用第一次代码的蓝色
+        sidebar.setBackground(new Color(70, 104, 197));
         sidebar.setPreferredSize(new Dimension(220, Integer.MAX_VALUE));
         sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String[] navItems = {"首页", "检查项", "检查组", "用户管理", "预约管理", "关于", "退出系统"};
+        String[] navItems = {"首页", "检查项", "检查组", "用户管理", "预约管理", "关于"};
         for (String item : navItems) {
-            JButton button = new JButton(item);
-            button.setAlignmentX(Component.LEFT_ALIGNMENT);
-            button.setMaximumSize(new Dimension(180, 50));
-            button.setPreferredSize(new Dimension(180, 50));
-            button.setFont(new Font("微软雅黑", Font.PLAIN, 14));
-            button.setBackground(new Color(90, 124, 217)); // 稍亮的蓝色
-            button.setForeground(Color.BLACK);
-            button.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-            button.setHorizontalAlignment(SwingConstants.LEFT);
-            button.setFocusPainted(false);
-            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            // 悬停效果
-            button.addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent evt) {
-                    button.setBackground(new Color(120, 150, 240)); // 悬停时更亮的蓝色
-                }
-                public void mouseExited(MouseEvent evt) {
-                    button.setBackground(new Color(90, 124, 217));
-                }
-            });
-
+            JButton button = createNavButton(item);
             button.addActionListener(getNavActionListener(item));
             sidebar.add(button);
-            sidebar.add(Box.createRigidArea(new Dimension(0, 5))); // 间距与第一次代码一致
+            sidebar.add(Box.createRigidArea(new Dimension(0, 5)));
         }
 
-        // 底部弹性空间
         sidebar.add(Box.createVerticalGlue());
+
+        JButton logoutBtn = createNavButton("退出登录");
+        logoutBtn.addActionListener(e -> {
+            JFrame frame = getParentFrame();
+            int confirm = JOptionPane.showConfirmDialog(
+                    frame,
+                    "确定要退出登录吗？",
+                    "确认退出",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                frame.dispose();
+                new com.healthsys.ui.auth.LoginView().setVisible(true);
+            }
+        });
+        sidebar.add(logoutBtn);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 5)));
+
+        JButton exitBtn = createNavButton("退出系统");
+        exitBtn.addActionListener(e -> System.exit(0));
+        sidebar.add(exitBtn);
+
         add(sidebar, BorderLayout.WEST);
+    }
+
+    private JButton createNavButton(String text) {
+        JButton button = new JButton(text);
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+        button.setMaximumSize(new Dimension(180, 50));
+        button.setPreferredSize(new Dimension(180, 50));
+        button.setFont(new Font("微软雅黑", Font.PLAIN, 14));
+        button.setBackground(new Color(90, 124, 217));
+        button.setForeground(Color.BLACK);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(new Color(120, 150, 240));
+            }
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(new Color(90, 124, 217));
+            }
+        });
+
+        return button;
     }
 
     private ActionListener getNavActionListener(String itemName) {
@@ -90,9 +117,6 @@ public class MainView extends JPanel {
                 case "关于":
                     showAbout();
                     break;
-                case "退出系统":
-                    System.exit(0);
-                    break;
             }
         };
     }
@@ -100,7 +124,7 @@ public class MainView extends JPanel {
     private void createContentArea() {
         contentPanel = new JPanel();
         contentPanel.setLayout(new CardLayout());
-        contentPanel.setBackground(new Color(245, 245, 245)); // 与第一次代码一致的背景色
+        contentPanel.setBackground(new Color(245, 245, 245));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         add(contentPanel, BorderLayout.CENTER);
     }
@@ -111,7 +135,7 @@ public class MainView extends JPanel {
 
         JLabel welcomeLabel = new JLabel("欢迎使用医疗健康管理系统", JLabel.CENTER);
         welcomeLabel.setFont(new Font("微软雅黑", Font.BOLD, 24));
-        welcomeLabel.setForeground(new Color(70, 104, 197)); // 标题颜色与导航栏一致
+        welcomeLabel.setForeground(new Color(70, 104, 197));
 
         JPanel centerPanel = new JPanel(new GridBagLayout());
         centerPanel.setBackground(new Color(245, 245, 245));
@@ -123,7 +147,7 @@ public class MainView extends JPanel {
         ((CardLayout) contentPanel.getLayout()).show(contentPanel, "home");
     }
 
-    private void showAbout() { // 新增显示关于面板的方法
+    private void showAbout() {
         if (aboutView == null) {
             aboutView = new AboutView();
             contentPanel.add(aboutView.getAboutPanel(), "about");
@@ -164,7 +188,6 @@ public class MainView extends JPanel {
     }
 }
 
-// AboutView 类
 class AboutView {
     private JPanel aboutPanel;
 
@@ -172,7 +195,7 @@ class AboutView {
         initializeUI();
     }
 
-    public JPanel getAboutPanel() { // 提供获取 aboutPanel 的方法
+    public JPanel getAboutPanel() {
         return aboutPanel;
     }
 
