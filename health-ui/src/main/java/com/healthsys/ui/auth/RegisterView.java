@@ -98,7 +98,7 @@ public class RegisterView extends JFrame {
             newUser.setPhone(phoneField.getText().trim());
             newUser.setBirthDate(birthDateChooser.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
             String genderStr = (String) genderComboBox.getSelectedItem();
-            int genderVal = "MALE".equals(genderStr) ? 1 : "FEMALE".equals(genderStr) ? 2 : 0;
+            int genderVal = "男".equals(genderStr) ? 1 : "女".equals(genderStr) ? 2 : 0;
             newUser.setGender(genderVal);
 
             UserDAO userDAO = new UserDAO();
