@@ -88,7 +88,7 @@ public class LoginView extends JFrame {
         // 登录类型选择
         JPanel typePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         typePanel.setOpaque(false);
-        loginTypeCombo = new JComboBox<>(new String[]{"普通用户", "管理员"});
+        loginTypeCombo = new JComboBox<>(new String[]{"普通用户", "管理员", "医生"});
         loginTypeCombo.setFont(LABEL_FONT);
         typePanel.add(new JLabel("登录身份:"));
         typePanel.add(loginTypeCombo);
@@ -262,10 +262,11 @@ public class LoginView extends JFrame {
             return;
         }
 
-        if ("管理员".equals(loginTypeCombo.getSelectedItem())) {
-            authService.handleAdminLogin(username, password);
-        } else {
-            authService.handleLogin(username, password);
+        String type = (String) loginTypeCombo.getSelectedItem();
+        switch (type) {
+            case "管理员" -> authService.handleAdminLogin(username, password);
+            case "医生"   -> authService.handleDoctorLogin(username, password);
+            default       -> authService.handleLogin(username, password);
         }
     }
 

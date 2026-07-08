@@ -2,7 +2,6 @@ package com.healthsys.dao;
 
 import com.healthsys.common.entity.Users;
 import com.healthsys.common.util.DbUtil;
-import com.healthsys.common.util.EncryptUtil;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -42,7 +41,7 @@ public class UserDAO {
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getPhone());
-            pstmt.setString(2, EncryptUtil.encrypt(user.getPasswordHash() != null ? user.getPasswordHash() : "123456"));
+            pstmt.setString(2, (user.getPasswordHash() != null ? user.getPasswordHash() : "123456"));
             pstmt.setString(3, user.getRealName());
             pstmt.setString(4, user.getIdCard());
             pstmt.setInt(5, user.getGender() != null ? user.getGender() : 0);
@@ -59,7 +58,7 @@ public class UserDAO {
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getPhone());
-            pstmt.setString(2, EncryptUtil.encrypt(user.getPasswordHash()));
+            pstmt.setString(2, (user.getPasswordHash()));
             pstmt.setString(3, user.getRealName());
             pstmt.setString(4, user.getIdCard());
             pstmt.setInt(5, user.getGender() != null ? user.getGender() : 0);
@@ -125,7 +124,7 @@ public class UserDAO {
         String sql = "UPDATE users SET password_hash = ?, first_login = FALSE WHERE user_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, EncryptUtil.encrypt(newPassword));
+            stmt.setString(1, (newPassword));
             stmt.setLong(2, userId);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }
