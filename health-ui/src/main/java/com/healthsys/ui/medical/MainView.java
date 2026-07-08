@@ -14,10 +14,8 @@ public class MainView extends JPanel {
     private final Long doctorId;
     private final String doctorName;
     private JPanel contentPanel;
-    private CheckItemPanel checkItemPanel;
-    private CheckGroupPanel checkGroupPanel;
-    private UserPanel userPanel;
     private AppointmentPanel appointmentPanel;
+    private ReportPanel reportPanel;
     private AboutView aboutView;
 
     private Users currentUser;
@@ -61,18 +59,7 @@ public class MainView extends JPanel {
         sidebar.setPreferredSize(new Dimension(220, Integer.MAX_VALUE));
         sidebar.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        List<String> navItems = new ArrayList<>();
-        navItems.add("首页");
-        // 医生（DOCTOR）只显示：首页、预约管理、关于
-        // 管理员显示全部菜单
-        if (!"DOCTOR".equalsIgnoreCase(role)) {
-            navItems.add("检查项");
-            navItems.add("检查组");
-            navItems.add("用户管理");
-        }
-        navItems.add("预约管理");
-        navItems.add("关于");
-
+        String[] navItems = {"首页", "预约管理", "报告管理", "关于"};
         for (String item : navItems) {
             JButton button = createNavButton(item);
             button.addActionListener(getNavActionListener(item));
@@ -136,17 +123,11 @@ public class MainView extends JPanel {
                 case "首页":
                     showHome();
                     break;
-                case "检查项":
-                    showCheckItems();
-                    break;
-                case "检查组":
-                    showCheckGroups();
-                    break;
-                case "用户管理":
-                    showUserManagement();
-                    break;
                 case "预约管理":
                     showAppointmentManagement();
+                    break;
+                case "报告管理":
+                    showReportManagement();
                     break;
                 case "关于":
                     showAbout();
@@ -189,36 +170,20 @@ public class MainView extends JPanel {
         ((CardLayout) contentPanel.getLayout()).show(contentPanel, "about");
     }
 
-    private void showCheckItems() {
-        if (checkItemPanel == null) {
-            checkItemPanel = new CheckItemPanel();
-            contentPanel.add(checkItemPanel, "checkItems");
-        }
-        ((CardLayout) contentPanel.getLayout()).show(contentPanel, "checkItems");
-    }
-
-    private void showCheckGroups() {
-        if (checkGroupPanel == null) {
-            checkGroupPanel = new CheckGroupPanel();
-            contentPanel.add(checkGroupPanel, "checkGroups");
-        }
-        ((CardLayout) contentPanel.getLayout()).show(contentPanel, "checkGroups");
-    }
-
-    private void showUserManagement() {
-        if (userPanel == null) {
-            userPanel = new UserPanel();
-            contentPanel.add(userPanel, "users");
-        }
-        ((CardLayout) contentPanel.getLayout()).show(contentPanel, "users");
-    }
-
     private void showAppointmentManagement() {
         if (appointmentPanel == null) {
             appointmentPanel = new AppointmentPanel(doctorId);
             contentPanel.add(appointmentPanel, "appointments");
         }
         ((CardLayout) contentPanel.getLayout()).show(contentPanel, "appointments");
+    }
+
+    private void showReportManagement() {
+        if (reportPanel == null) {
+            reportPanel = new ReportPanel(doctorId);
+            contentPanel.add(reportPanel, "reports");
+        }
+        ((CardLayout) contentPanel.getLayout()).show(contentPanel, "reports");
     }
 }
 
