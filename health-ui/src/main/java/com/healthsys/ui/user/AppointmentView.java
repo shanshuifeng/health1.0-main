@@ -7,10 +7,12 @@ import com.healthsys.common.entity.Appointment;
 import com.healthsys.common.entity.Users;
 import com.healthsys.common.entity.CheckItemGroup;
 import com.healthsys.common.entity.CheckItem;
+import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,9 +35,10 @@ public class AppointmentView {
 
         // 工具栏
         JPanel toolbarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        // JButton newAppointmentBtn = new JButton("新建预约");
-        // newAppointmentBtn.addActionListener(this::showNewAppointmentDialog);
-        // toolbarPanel.add(newAppointmentBtn);
+        JButton refreshBtn = new JButton("刷新");
+        refreshBtn.setFont(new Font("微软雅黑", Font.PLAIN, 13));
+        refreshBtn.addActionListener(e -> refreshAppointmentData());
+        toolbarPanel.add(refreshBtn);
 
         // 预约表格
         String[] columnNames = { "ID", "检查组/项目", "类型", "预约时间", "状态", "支付状态", "操作" };
@@ -270,27 +273,72 @@ public class AppointmentView {
 
     private void showTimeSelectionDialog(Long groupId, Long testId, JDialog parentDialog) {
         JDialog timeDialog = new JDialog(parentDialog, "选择预约时间", true);
-        timeDialog.setSize(400, 200);
+        timeDialog.setSize(400, 250);
         timeDialog.setLocationRelativeTo(parentDialog);
 
-        JPanel panel = new JPanel(new GridLayout(0, 2, 10, 10));
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        panel.add(new JLabel("预约时间:"));
-        JSpinner timeSpinner = new JSpinner(new SpinnerDateModel());
-        JSpinner.DateEditor timeEditor = new JSpinner.DateEditor(timeSpinner, "yyyy-MM-dd HH:mm");
-        timeSpinner.setEditor(timeEditor);
-        panel.add(timeSpinner);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(new JLabel("预约日期:"), gbc);
+
+        JDateChooser dateChooser = new JDateChooser();
+        dateChooser.setDateFormatString("yyyy-MM-dd");
+        dateChooser.setDate(new Date());
+        gbc.gridx = 1;
+        panel.add(dateChooser, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        panel.add(new JLabel("预约时间:"), gbc);
+
+        String[] timeSlots = {"08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+                "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"};
+        JComboBox<String> timeCombo = new JComboBox<>(timeSlots);
+        gbc.gridx = 1;
+        panel.add(timeCombo, gbc);
 
         JButton submitBtn = new JButton("确认预约");
+        submitBtn.setBackground(new Color(41, 75, 166));
+        submitBtn.setForeground(Color.WHITE);
+        submitBtn.setFont(new Font("微软雅黑", Font.BOLD, 16));
+        submitBtn.setFocusPainted(false);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.ipady = 8;
+        panel.add(submitBtn, gbc);
+
         submitBtn.addActionListener(e -> {
-            Date appointmentTime = (Date) timeSpinner.getValue();
+            Date selectedDate = dateChooser.getDate();
+            if (selectedDate == null) {
+                JOptionPane.showMessageDialog(timeDialog, "请选择预约日期", "错误", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String timeStr = (String) timeCombo.getSelectedItem();
+            String[] parts = timeStr.split(":");
+            int hour = Integer.parseInt(parts[0]);
+            int minute = Integer.parseInt(parts[1]);
+
+            java.time.LocalDate localDate = selectedDate.toInstant()
+                    .atZone(ZoneId.systemDefault()).toLocalDate();
+            java.time.LocalDateTime ldt = localDate.atTime(hour, minute);
+
+            if (ldt.isBefore(java.time.LocalDateTime.now())) {
+                JOptionPane.showMessageDialog(timeDialog, "不能预约过去的时间", "错误", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Date appointmentTime = Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
 
             if (controller.createAppointment(currentUser, groupId, appointmentTime)) {
-                System.out.println("✅【预约成功】即将显示支付确认对话框"); // 调试信息
                 JOptionPane.showMessageDialog(timeDialog, "预约成功!", "成功", JOptionPane.INFORMATION_MESSAGE);
 
-                // 弹出支付确认对话框
                 int option = JOptionPane.showConfirmDialog(
                         timeDialog,
                         "是否立即支付？",
@@ -299,10 +347,8 @@ public class AppointmentView {
                         JOptionPane.QUESTION_MESSAGE);
 
                 if (option == JOptionPane.YES_OPTION) {
-                    // 用户选择立即支付
-                    showPaymentDialog(groupId); // 假设返回的 appointmentId 可从 controller 获取
+                    showPaymentDialog(groupId);
                 } else {
-                    // 用户选择稍后支付
                     JOptionPane.showMessageDialog(timeDialog, "您可稍后支付，请注意支付截止时间", "提示",
                             JOptionPane.INFORMATION_MESSAGE);
                 }
@@ -315,9 +361,6 @@ public class AppointmentView {
                 JOptionPane.showMessageDialog(timeDialog, "预约失败!", "错误", JOptionPane.ERROR_MESSAGE);
             }
         });
-
-        panel.add(new JLabel());
-        panel.add(submitBtn);
 
         timeDialog.add(panel);
         timeDialog.setVisible(true);

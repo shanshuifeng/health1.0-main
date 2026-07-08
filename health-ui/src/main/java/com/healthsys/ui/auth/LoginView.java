@@ -198,7 +198,11 @@ public class LoginView extends JFrame {
                 });
             }
 
-            @Override public void onFirstLogin(Users user) {}
+            @Override public void onFirstLogin(Users user) {
+                savePreferences();
+                dispose();
+                redirectBasedOnRole(user);
+            }
             @Override public void onPasswordChangeSuccess(Users user) {}
             @Override public void onPasswordChangeFailed(String errorMessage) {}
         });

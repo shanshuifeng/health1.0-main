@@ -78,7 +78,13 @@ public class ExamRecordView {
             for (ExamRecord record : records) {
                 CheckItem checkItem = appointmentController.getCheckItemById(record.getTestId());
                 String testName = checkItem != null ? checkItem.getName() : "未知项目";
-                String unit = checkItem != null ? checkItem.getNormalRange().split(":")[1].replaceAll("[\\d.-]+", "").trim() : "";
+                String unit = "";
+                if (checkItem != null && checkItem.getNormalRange() != null) {
+                    String[] parts = checkItem.getNormalRange().split(":");
+                    if (parts.length > 1) {
+                        unit = parts[1].replaceAll("[\\d.-]+", "").trim();
+                    }
+                }
                 String normalRange = checkItem != null ? checkItem.getNormalRange() : "";
 
                 Object[] row = {
