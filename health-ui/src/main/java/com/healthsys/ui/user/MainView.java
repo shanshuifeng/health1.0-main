@@ -77,10 +77,10 @@ public class MainView {
 
         // 导航按钮
         addNavButton("首页", "home.png", () -> showPanel("home"));
-        addNavButton("预约", "message.png", () -> showPanel("messages")); // 新增消息按钮
+        addNavButton("预约", "message.png", () -> showPanel("groups"));
         addNavButton("自定义检查组", "package_customize.png", () -> showPanel("customPackage"));
-        addNavButton("消息", "calendar.png", () -> showPanel("appointment"));
-        addNavButton("体检信息", "health.png", () -> showPanel("checkupInfo")); // 新增体检信息按钮
+        addNavButton("我的预约", "calendar.png", () -> showPanel("appointments"));
+        addNavButton("体检信息", "health.png", () -> showPanel("checkupInfo"));
         addNavButton("关于", "info.png", () -> showPanel("about"));
 
 
@@ -123,8 +123,8 @@ public class MainView {
         rightPanel.add(homePanel, "home");
 
         JPanel appointmentPanel = appointmentView.getAppointmentPanel();
-        appointmentPanel.setName("appointment");
-        rightPanel.add(appointmentPanel, "appointment");
+        appointmentPanel.setName("appointments");
+        rightPanel.add(appointmentPanel, "appointments");
 
         // 创建自定义检查组面板
         CustomPackageView customPackageView = new CustomPackageView(currentUser);
@@ -138,11 +138,11 @@ public class MainView {
         aboutPanel.setName("about");
         rightPanel.add(aboutPanel, "about");
 
-        // 添加消息面板
+        // 检查组列表（预约入口）
         MessagesView messagesView = new MessagesView(currentUser);
         JPanel messagesPanel = messagesView.getMessagesPanel();
-        messagesPanel.setName("messages");
-        rightPanel.add(messagesPanel, "messages");
+        messagesPanel.setName("groups");
+        rightPanel.add(messagesPanel, "groups");
 
 
         JPanel checkupInfoPanel = new JPanel(new BorderLayout());
@@ -205,10 +205,10 @@ public class MainView {
     private void updateWindowTitle(String panelName) {
         String title = switch (panelName) {
             case "home" -> "首页";
-            case "messages" -> "消息";
-            case "appointment" -> "自定义检查组";
+            case "groups" -> "预约";
+            case "appointments" -> "我的预约";
+            case "customPackage" -> "自定义检查组";
             case "checkupInfo" -> "体检信息";
-            case "userManagement" -> "体检信息";
             case "about" -> "关于";
             default -> "";
         };
@@ -233,10 +233,10 @@ public class MainView {
                 if (name != null) {
                     return switch (name) {
                         case "home" -> "首页";
-                        case "messages" -> "预约";
-                        case "appointment" -> "消息";
+                        case "groups" -> "预约";
+                        case "appointments" -> "我的预约";
+                        case "customPackage" -> "自定义检查组";
                         case "checkupInfo" -> "体检信息";
-                        case "userManagement" -> "用户管理";
                         case "about" -> "关于";
                         default -> "";
                     };

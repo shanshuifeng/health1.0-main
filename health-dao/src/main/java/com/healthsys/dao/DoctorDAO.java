@@ -45,6 +45,26 @@ public class DoctorDAO {
         return list;
     }
 
+    public List<Doctor> search(Long id, String name) {
+        List<Doctor> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM doctors WHERE 1=1");
+        if (id != null) sql.append(" AND doctor_id = ?");
+        if (name != null && !name.isEmpty()) sql.append(" AND name LIKE ?");
+
+        try (Connection conn = DbUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int paramIndex = 1;
+            if (id != null) stmt.setLong(paramIndex++, id);
+            if (name != null && !name.isEmpty()) stmt.setString(paramIndex++, "%" + name + "%");
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
     public boolean add(Doctor doctor) {
         String sql = "INSERT INTO doctors (username, password_hash, name, department, title, status) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DbUtil.getConnection();
