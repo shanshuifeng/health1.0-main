@@ -13,6 +13,7 @@ public class Users {
     private LocalDate birthDate;
     private Integer status; // 1-正常 0-禁用
     private Boolean firstLogin = true;
+    private String role; // 登录路由用：MEDICAL→医护端, 其他→用户端（非DB字段）
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -66,6 +67,9 @@ public class Users {
 
     public Boolean isFirstLogin() { return firstLogin; }
     public void setFirstLogin(Boolean firstLogin) { this.firstLogin = firstLogin; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

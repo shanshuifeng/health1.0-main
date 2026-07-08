@@ -205,8 +205,11 @@ public class LoginView extends JFrame {
     }
 
     private void redirectBasedOnRole(Users user) {
-        // 新架构下通过独立表区分角色，普通用户统一跳转到用户界面
-        openUserInterface(user);
+        if ("MEDICAL".equals(user.getRole())) {
+            openMedicalInterface();
+        } else {
+            openUserInterface(user);
+        }
     }
 
     private void openMedicalInterface() {

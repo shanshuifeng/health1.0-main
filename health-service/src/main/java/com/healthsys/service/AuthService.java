@@ -105,6 +105,7 @@ public class AuthService {
         u.setRealName(name);
         u.setPhone(phone != null ? phone : "");
         u.setFirstLogin(false);
+        u.setRole("MEDICAL");  // 标记为医护角色，用于 LoginView 路由
         return u;
     }
 }
