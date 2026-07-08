@@ -93,6 +93,7 @@ public class RegisterView extends JFrame {
             newUser.setName(nameField.getText().trim());
             newUser.setPassword(new String(passwordField.getPassword()));
             newUser.setStatus(1);
+            newUser.setFirstLogin(false);
 
             newUser.setPhone(phoneField.getText().trim());
             newUser.setBirthDate(birthDateChooser.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
