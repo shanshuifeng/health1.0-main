@@ -211,7 +211,7 @@ class AboutView {
         JLabel versionLabel = new JLabel("版本: 1.0.0", JLabel.CENTER);
         versionLabel.setFont(new Font("微软雅黑", Font.PLAIN, 16));
 
-        JLabel dateLabel = new JLabel("开发日期: 2025年", JLabel.CENTER);
+        JLabel dateLabel = new JLabel("开发日期: 2026年", JLabel.CENTER);
         dateLabel.setFont(new Font("微软雅黑", Font.PLAIN, 16));
 
         JLabel descLabel = new JLabel("本系统为小组开发作业，提供用户界面专属预约体检、查看消息等功能。", JLabel.CENTER);
