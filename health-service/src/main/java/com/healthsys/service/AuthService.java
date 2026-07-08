@@ -52,7 +52,7 @@ public class AuthService {
         if (admin == null) { fail("管理员账号不存在"); return; }
         if (!password.equals(admin.getPasswordHash())) { fail("管理员密码错误"); return; }
 
-        Users u = toVirtualUser(admin.getAdminId(), admin.getRealName(), admin.getPhone());
+        Users u = toVirtualUser(admin.getAdminId(), admin.getRealName(), admin.getPhone(), "ADMIN");
         if (loginListener != null) loginListener.onLoginSuccess(u);
     }
 
@@ -66,7 +66,7 @@ public class AuthService {
         if (doctor == null) { fail("医生账号不存在"); return; }
         if (!password.equals(doctor.getPasswordHash())) { fail("医生密码错误"); return; }
 
-        Users u = toVirtualUser(doctor.getDoctorId(), doctor.getName(), null);
+        Users u = toVirtualUser(doctor.getDoctorId(), doctor.getName(), null, "DOCTOR");
         if (loginListener != null) loginListener.onLoginSuccess(u);
     }
 
@@ -99,13 +99,13 @@ public class AuthService {
         if (loginListener != null) loginListener.onLoginFailed(msg);
     }
 
-    private Users toVirtualUser(Long id, String name, String phone) {
+    private Users toVirtualUser(Long id, String name, String phone, String role) {
         Users u = new Users();
         u.setUserId(id);
         u.setRealName(name);
         u.setPhone(phone != null ? phone : "");
         u.setFirstLogin(false);
-        u.setRole("MEDICAL");  // 标记为医护角色，用于 LoginView 路由
+        u.setRole(role);
         return u;
     }
 }

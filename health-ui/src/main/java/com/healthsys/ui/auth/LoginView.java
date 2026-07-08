@@ -2,6 +2,7 @@ package com.healthsys.ui.auth;
 
 import com.healthsys.service.AuthService;
 import com.healthsys.common.entity.Users;
+import com.healthsys.ui.admin.AdminMainView;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -209,7 +210,9 @@ public class LoginView extends JFrame {
     }
 
     private void redirectBasedOnRole(Users user) {
-        if ("MEDICAL".equals(user.getRole())) {
+        if ("ADMIN".equals(user.getRole())) {
+            openAdminInterface();
+        } else if ("DOCTOR".equals(user.getRole())) {
             openMedicalInterface();
         } else {
             openUserInterface(user);
@@ -231,6 +234,23 @@ public class LoginView extends JFrame {
             });
         } catch (Exception e) {
             showError("医护界面加载失败", e.getMessage());
+        }
+    }
+
+    private void openAdminInterface() {
+        try {
+            SwingUtilities.invokeLater(() -> {
+                JFrame frame = new JFrame("管理员管理控制台");
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setSize(1200, 800);
+                frame.setLocationRelativeTo(null);
+
+                AdminMainView panel = new AdminMainView();
+                frame.add(panel);
+                frame.setVisible(true);
+            });
+        } catch (Exception e) {
+            showError("管理员界面加载失败", e.getMessage());
         }
     }
 
