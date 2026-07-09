@@ -124,19 +124,21 @@ public class AdminMainView extends JPanel {
         JPanel homePanel = new JPanel(new BorderLayout());
         homePanel.setBackground(new Color(245, 245, 245));
 
-        JLabel welcomeLabel = new JLabel("欢迎使用管理员控制台", JLabel.CENTER);
-        welcomeLabel.setFont(new Font("微软雅黑", Font.BOLD, 24));
+        JLabel welcomeLabel = new JLabel("欢迎使用健康管理系统", JLabel.CENTER);
+        welcomeLabel.setFont(new Font("微软雅黑", Font.BOLD, 32));
         welcomeLabel.setForeground(new Color(70, 104, 197));
 
-        JLabel tipLabel = new JLabel("您可以在此管理用户和医生账号。", JLabel.CENTER);
-        tipLabel.setFont(new Font("微软雅黑", Font.PLAIN, 16));
-        tipLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        JLabel userLabel = new JLabel("管理员，您好！", JLabel.CENTER);
+        userLabel.setFont(new Font("微软雅黑", Font.PLAIN, 24));
+        userLabel.setForeground(new Color(100, 100, 100));
 
-        JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.insets = new Insets(10, 0, 30, 0);
+        centerPanel.add(welcomeLabel, gbc);
+        centerPanel.add(userLabel, gbc);
         centerPanel.setBackground(new Color(245, 245, 245));
-        centerPanel.add(welcomeLabel);
-        centerPanel.add(tipLabel);
 
         homePanel.add(centerPanel, BorderLayout.CENTER);
 

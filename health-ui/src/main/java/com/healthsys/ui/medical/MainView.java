@@ -148,13 +148,21 @@ public class MainView extends JPanel {
         JPanel homePanel = new JPanel(new BorderLayout());
         homePanel.setBackground(new Color(245, 245, 245));
 
-        JLabel welcomeLabel = new JLabel("欢迎使用医疗健康管理系统", JLabel.CENTER);
-        welcomeLabel.setFont(new Font("微软雅黑", Font.BOLD, 24));
+        JLabel welcomeLabel = new JLabel("欢迎使用健康管理系统", JLabel.CENTER);
+        welcomeLabel.setFont(new Font("微软雅黑", Font.BOLD, 32));
         welcomeLabel.setForeground(new Color(70, 104, 197));
 
+        JLabel userLabel = new JLabel((doctorName != null ? doctorName : "") + " 医生，您好！", JLabel.CENTER);
+        userLabel.setFont(new Font("微软雅黑", Font.PLAIN, 24));
+        userLabel.setForeground(new Color(100, 100, 100));
+
         JPanel centerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.insets = new Insets(10, 0, 30, 0);
+        centerPanel.add(welcomeLabel, gbc);
+        centerPanel.add(userLabel, gbc);
         centerPanel.setBackground(new Color(245, 245, 245));
-        centerPanel.add(welcomeLabel);
 
         homePanel.add(centerPanel, BorderLayout.CENTER);
 

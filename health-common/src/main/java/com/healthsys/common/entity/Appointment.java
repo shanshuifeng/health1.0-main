@@ -11,7 +11,7 @@ public class Appointment {
     private LocalDateTime appointmentTime;
     private LocalDate examDate;          // 体检预约日期
     private String examTimeSlot;         // 时段（上午/下午）
-    private String status;               // PENDING/CONFIRMED/COMPLETED/CANCELLED
+    private String status;               // PENDING/COMPLETED/CANCELLED
     private Boolean paymentStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -34,7 +34,6 @@ public class Appointment {
     public String getStatusDisplay() {
         return switch (status != null ? status : "PENDING") {
             case "PENDING" -> "待检查";
-            case "CONFIRMED" -> "已确认";
             case "COMPLETED" -> "已完成";
             case "CANCELLED" -> "已取消";
             default -> status;

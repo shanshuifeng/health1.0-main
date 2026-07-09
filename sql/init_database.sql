@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     appointment_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '预约创建时间',
     exam_date DATE NOT NULL COMMENT '体检预约日期',
     exam_time_slot VARCHAR(20) COMMENT '时段（上午/下午）',
-    status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态: PENDING/CONFIRMED/COMPLETED/CANCELLED',
+    status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态: PENDING/COMPLETED/CANCELLED',
     payment_status BOOLEAN DEFAULT FALSE COMMENT '支付状态: FALSE-未支付 TRUE-已支付',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -400,15 +400,20 @@ ON DUPLICATE KEY UPDATE phone = phone;
 -- ---------------------------------------------
 -- 3.7 示例预约
 -- ---------------------------------------------
-INSERT INTO appointments (user_id, group_id, exam_date, exam_time_slot, status, payment_status) VALUES
-(1, 3, '2026-07-10', '上午', 'PENDING',  FALSE),
-(2, 4, '2026-07-11', '上午', 'PENDING',  FALSE),
-(3, 5, '2026-07-10', '下午', 'CONFIRMED',TRUE),
-(4, 6, '2026-07-12', '上午', 'PENDING',  TRUE),
-(5, 7, '2026-07-09', '上午', 'COMPLETED',TRUE),
-(1, 8, '2026-07-15', '上午', 'PENDING',  TRUE),
-(2, 9, '2026-07-14', '下午', 'CONFIRMED',FALSE),
-(3, 1, '2026-07-08', '上午', 'COMPLETED',TRUE)
+INSERT INTO appointments (user_id, group_id, doctor_id, exam_date, exam_time_slot, status, payment_status) VALUES
+(1, 3, 1, '2026-07-10', '上午', 'PENDING',  FALSE),
+(2, 4, 1, '2026-07-11', '上午', 'PENDING',  FALSE),
+(3, 5, 1, '2026-07-10', '下午', 'PENDING',TRUE),
+(4, 6, 1, '2026-07-12', '上午', 'PENDING',  TRUE),
+(5, 7, 1, '2026-07-09', '上午', 'COMPLETED',TRUE),
+(1, 8, 1, '2026-07-15', '上午', 'PENDING',  TRUE),
+(2, 9, 1, '2026-07-14', '下午', 'PENDING',FALSE),
+(3, 1, 1, '2026-07-08', '上午', 'COMPLETED',TRUE),
+(4, 6, 1, '2026-07-07', '上午', 'COMPLETED', TRUE),
+(1, 3, 1, '2026-07-06', '下午', 'COMPLETED', TRUE),
+(2, 10, 1, '2026-07-05', '上午', 'COMPLETED', TRUE),
+(5, 2, 1, '2026-07-16', '上午', 'PENDING', TRUE),
+(4, 8, 1, '2026-07-17', '下午', 'PENDING', FALSE)
 ON DUPLICATE KEY UPDATE appointment_id = appointment_id;
 
 -- ---------------------------------------------
@@ -441,4 +446,57 @@ INSERT INTO check_results (appointment_id, item_id, doctor_id, result_value, is_
 (8, 4, 1, '120',  FALSE, NULL, '2026-07-08 08:35'),
 (8, 5, 1, '78',   FALSE, NULL, '2026-07-08 08:35'),
 (8, 6, 1, '72',   FALSE, NULL, '2026-07-08 08:35')
+ON DUPLICATE KEY UPDATE result_id = result_id;
+
+-- 中青年女士 李美丽 (appointment_id=9)
+INSERT INTO check_results (appointment_id, item_id, doctor_id, result_value, is_abnormal, doctor_note, exam_date) VALUES
+(9, 1, 1, '160', FALSE, NULL, '2026-07-07 08:30'),
+(9, 2, 1, '55', FALSE, NULL, '2026-07-07 08:30'),
+(9, 3, 1, '21.5', FALSE, NULL, '2026-07-07 08:30'),
+(9, 4, 1, '118', FALSE, NULL, '2026-07-07 08:35'),
+(9, 5, 1, '76', FALSE, NULL, '2026-07-07 08:35'),
+(9, 6, 1, '72', FALSE, NULL, '2026-07-07 08:35'),
+(9, 8, 3, '6.2', FALSE, NULL, '2026-07-07 09:00'),
+(9, 9, 3, '4.2', FALSE, NULL, '2026-07-07 09:00'),
+(9, 10, 3, '128', FALSE, NULL, '2026-07-07 09:00'),
+(9, 19, 3, '5.2', FALSE, NULL, '2026-07-07 09:10'),
+(9, 22, 3, '4.8', FALSE, NULL, '2026-07-07 09:10'),
+(9, 23, 3, '1.2', FALSE, NULL, '2026-07-07 09:10'),
+(9, 32, 3, '25', FALSE, NULL, '2026-07-07 09:15'),
+(9, 43, 3, '2.1', FALSE, NULL, '2026-07-07 09:20'),
+(9, 48, 3, '3.2', FALSE, NULL, '2026-07-07 09:30'),
+(9, 51, 3, '15', FALSE, NULL, '2026-07-07 09:30')
+ON DUPLICATE KEY UPDATE result_id = result_id;
+
+-- 入职体检 赵小明 (appointment_id=10)
+INSERT INTO check_results (appointment_id, item_id, doctor_id, result_value, is_abnormal, doctor_note, exam_date) VALUES
+(10, 1, 1, '172', FALSE, NULL, '2026-07-06 14:00'),
+(10, 2, 1, '80', FALSE, NULL, '2026-07-06 14:00'),
+(10, 3, 1, '27.1', TRUE, 'BMI偏高，建议控制体重', '2026-07-06 14:00'),
+(10, 4, 1, '135', FALSE, NULL, '2026-07-06 14:05'),
+(10, 5, 1, '88', FALSE, NULL, '2026-07-06 14:05'),
+(10, 6, 1, '85', FALSE, NULL, '2026-07-06 14:05'),
+(10, 8, 3, '7.5', FALSE, NULL, '2026-07-06 14:20'),
+(10, 9, 3, '4.8', FALSE, NULL, '2026-07-06 14:20'),
+(10, 10, 3, '145', FALSE, NULL, '2026-07-06 14:20'),
+(10, 60, 6, '窦性心律不齐', TRUE, '轻度窦性心律不齐，建议复查', '2026-07-06 15:00'),
+(10, 61, 4, '未见异常', FALSE, NULL, '2026-07-06 15:30'),
+(10, 65, 7, '1.2', FALSE, NULL, '2026-07-06 15:45'),
+(10, 67, 9, '未见异常', FALSE, NULL, '2026-07-06 15:50')
+ON DUPLICATE KEY UPDATE result_id = result_id;
+
+-- 心脑血管专筛 钱小红 (appointment_id=11)
+INSERT INTO check_results (appointment_id, item_id, doctor_id, result_value, is_abnormal, doctor_note, exam_date) VALUES
+(11, 1, 1, '158', FALSE, NULL, '2026-07-05 08:30'),
+(11, 2, 1, '52', FALSE, NULL, '2026-07-05 08:30'),
+(11, 3, 1, '20.8', FALSE, NULL, '2026-07-05 08:30'),
+(11, 4, 1, '125', FALSE, NULL, '2026-07-05 08:35'),
+(11, 5, 1, '82', FALSE, NULL, '2026-07-05 08:35'),
+(11, 6, 1, '70', FALSE, NULL, '2026-07-05 08:35'),
+(11, 22, 3, '5.8', TRUE, '总胆固醇偏高，建议低脂饮食', '2026-07-05 09:00'),
+(11, 23, 3, '2.1', TRUE, '甘油三酯偏高，建议控制油脂摄入', '2026-07-05 09:00'),
+(11, 24, 3, '1.0', FALSE, NULL, '2026-07-05 09:00'),
+(11, 25, 3, '3.8', TRUE, '低密度脂蛋白偏高，心血管风险增加', '2026-07-05 09:00'),
+(11, 60, 6, '正常', FALSE, NULL, '2026-07-05 09:30'),
+(11, 64, 5, '未见明显斑块', FALSE, NULL, '2026-07-05 10:00')
 ON DUPLICATE KEY UPDATE result_id = result_id;

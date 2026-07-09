@@ -48,7 +48,7 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
         sp.add(dateToChooser);
 
         sp.add(new JLabel("状态:"));
-        statusFilterCombo = new JComboBox<>(new String[]{"全部", "待检查", "已确认", "已完成", "已取消"});
+        statusFilterCombo = new JComboBox<>(new String[]{"全部", "待检查", "已完成", "已取消"});
         statusFilterCombo.setPreferredSize(new Dimension(90, 25));
         statusFilterCombo.setFont(new Font("微软雅黑", Font.PLAIN, 12));
         sp.add(statusFilterCombo);
@@ -95,7 +95,6 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
     private String statusToCode(String display) {
         return switch (display) {
             case "待检查" -> "PENDING";
-            case "已确认" -> "CONFIRMED";
             case "已完成" -> "COMPLETED";
             case "已取消" -> "CANCELLED";
             default -> null;

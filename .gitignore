@@ -18,3 +18,5 @@ Thumbs.db
 # OfficeÁÙÊ±ÎÄ¼ş
 ~$*.docx
 ~$*.docx
+db.properties
+.gitignore
