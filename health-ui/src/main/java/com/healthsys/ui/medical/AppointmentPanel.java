@@ -229,6 +229,9 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
         List<Appointment> result;
         if (!userName.isEmpty()) {
             result = appointmentDAO.search(userName);
+            if (doctorId != null) {
+                result = result.stream().filter(a -> doctorId.equals(a.getDoctorId())).collect(Collectors.toList());
+            }
             if (dateFrom != null || dateTo != null || quickStatusFilter != null) {
                 LocalDate finalDateFrom = dateFrom;
                 LocalDate finalDateTo = dateTo;

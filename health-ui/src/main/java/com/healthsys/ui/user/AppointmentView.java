@@ -57,15 +57,29 @@ public class AppointmentView {
         leftToolbar.add(refreshBtn);
         toolbarPanel.add(leftToolbar, BorderLayout.WEST);
 
-        // 右侧：打印报告按钮
-        JPanel rightToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // 右侧：打印报告和查看医生报告按钮
+        JPanel rightToolbar = new JPanel();
+        rightToolbar.setLayout(new BoxLayout(rightToolbar, BoxLayout.Y_AXIS));
+
         JButton printBtn = new JButton("打印报告");
         printBtn.setFont(new Font("微软雅黑", Font.BOLD, 13));
         printBtn.setBackground(new Color(70, 104, 197));
         printBtn.setForeground(Color.BLACK);
         printBtn.setFocusPainted(false);
+        printBtn.setAlignmentX(Component.RIGHT_ALIGNMENT);
         printBtn.addActionListener(this::handlePrintReport);
         rightToolbar.add(printBtn);
+
+        rightToolbar.add(Box.createVerticalStrut(5));
+
+        JButton viewReportBtn = new JButton("查看医生报告");
+        viewReportBtn.setFont(new Font("微软雅黑", Font.BOLD, 13));
+        viewReportBtn.setBackground(new Color(102, 153, 204));
+        viewReportBtn.setForeground(Color.BLACK);
+        viewReportBtn.setFocusPainted(false);
+        viewReportBtn.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        viewReportBtn.addActionListener(this::handleViewDoctorReport);
+        rightToolbar.add(viewReportBtn);
         toolbarPanel.add(rightToolbar, BorderLayout.EAST);
 
         // 分类按钮
@@ -103,7 +117,7 @@ public class AppointmentView {
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4 || column == 6; // "详情"列和"操作"列可编辑
+                return column == 4 || column == 5 || column == 6; // "详情"列、"支付状态"列和"操作"列可编辑
             }
         };
 
@@ -111,6 +125,8 @@ public class AppointmentView {
         appointmentTable.setRowHeight(30);
         appointmentTable.getColumnModel().getColumn(4).setCellRenderer(new DetailButtonRenderer());
         appointmentTable.getColumnModel().getColumn(4).setCellEditor(new DetailButtonEditor(new JCheckBox(), this));
+        appointmentTable.getColumnModel().getColumn(5).setCellRenderer(new PaymentStatusRenderer());
+        appointmentTable.getColumnModel().getColumn(5).setCellEditor(new PaymentStatusEditor(new JCheckBox()));
         appointmentTable.getColumnModel().getColumn(6).setCellRenderer(new ButtonRenderer());
         appointmentTable.getColumnModel().getColumn(6).setCellEditor(new ButtonEditor(new JCheckBox()));
 
@@ -314,6 +330,123 @@ public class AppointmentView {
         }
     }
 
+    // ===== 支付状态按钮相关 =====
+
+    /**
+     * 支付状态渲染器：已支付显示绿色，未支付显示橙色
+     */
+    class PaymentStatusRenderer extends JButton implements javax.swing.table.TableCellRenderer {
+        public PaymentStatusRenderer() {
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            String text = (value == null) ? "" : value.toString();
+            setText(text);
+            setFont(new Font("微软雅黑", Font.BOLD, 13));
+
+            if ("已支付".equals(text)) {
+                setBackground(new Color(76, 175, 80));
+                setForeground(Color.BLACK);
+            } else {
+                setBackground(new Color(255, 152, 0));
+                setForeground(Color.BLACK);
+            }
+            setBorderPainted(true);
+            setFocusPainted(false);
+            return this;
+        }
+    }
+
+    /**
+     * 支付状态编辑器：点击后可进行支付操作或查看已支付状态
+     */
+    class PaymentStatusEditor extends DefaultCellEditor {
+        private String label;
+
+        public PaymentStatusEditor(JCheckBox checkBox) {
+            super(checkBox);
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                boolean isSelected, int row, int column) {
+            label = (value == null) ? "" : value.toString();
+            JButton button = new JButton(label);
+            button.setFont(new Font("微软雅黑", Font.BOLD, 13));
+
+            if ("已支付".equals(label)) {
+                button.setBackground(new Color(76, 175, 80));
+            } else {
+                button.setBackground(new Color(255, 152, 0));
+            }
+            button.setForeground(Color.BLACK);
+            button.setFocusPainted(false);
+
+            button.addActionListener(e -> {
+                Long appointmentId = (Long) table.getValueAt(row, 0);
+                String currentStatus = (String) table.getValueAt(row, 5);
+
+                if ("已支付".equals(currentStatus)) {
+                    // 已支付：弹出小窗显示"已支付"
+                    JOptionPane.showMessageDialog(table,
+                            "已支付",
+                            "支付状态",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    // 未支付：询问是否支付
+                    int result = JOptionPane.showConfirmDialog(table,
+                            "是否确认支付？",
+                            "支付确认",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE);
+
+                    if (result == JOptionPane.YES_OPTION) {
+                        // 执行支付
+                        Double price = controller.getAppointmentPrice(appointmentId);
+                        if (price == null) {
+                            JOptionPane.showMessageDialog(table,
+                                    "无法获取检查组价格", "错误", JOptionPane.ERROR_MESSAGE);
+                            fireEditingStopped();
+                            return;
+                        }
+
+                        int confirmPay = JOptionPane.showConfirmDialog(table,
+                                "您需要支付: ¥" + price + "，是否继续？",
+                                "支付确认",
+                                JOptionPane.YES_NO_OPTION);
+
+                        if (confirmPay == JOptionPane.YES_OPTION) {
+                            PaymentService paymentService = new MockPaymentService();
+                            boolean paid = paymentService.pay(appointmentId, price);
+
+                            if (paid && controller.updatePaymentStatus(appointmentId, true)) {
+                                JOptionPane.showMessageDialog(table,
+                                        "支付成功！",
+                                        "成功",
+                                        JOptionPane.INFORMATION_MESSAGE);
+                                refreshAppointmentData();
+                            } else {
+                                JOptionPane.showMessageDialog(table,
+                                        "支付失败，请重试",
+                                        "错误",
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                }
+                fireEditingStopped();
+            });
+            return button;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return label;
+        }
+    }
 
 
     public JPanel getAppointmentPanel() {
@@ -441,6 +574,154 @@ public class AppointmentView {
             Long appointmentId = (Long) appointmentTable.getValueAt(selectedRow, 0);
             printSingleAppointment(appointmentId);
         }
+    }
+
+    /**
+     * 查看医生报告：选中预约后，展示医生撰写的报告内容，并提供打印选项
+     */
+    private void handleViewDoctorReport(ActionEvent e) {
+        int selectedRow = appointmentTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(appointmentPanel,
+                    "请先在表格中选择一条预约记录",
+                    "提示", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        Long appointmentId = (Long) appointmentTable.getValueAt(selectedRow, 0);
+        Appointment appointment = controller.getAppointmentById(appointmentId);
+        if (appointment == null) {
+            JOptionPane.showMessageDialog(appointmentPanel, "未找到该预约", "错误", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (!"COMPLETED".equals(appointment.getStatus())) {
+            JOptionPane.showMessageDialog(appointmentPanel,
+                    "该预约尚未完成检查，暂无医生报告",
+                    "提示", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        Report report = reportDAO.getByAppointmentId(appointmentId);
+        if (report == null) {
+            JOptionPane.showMessageDialog(appointmentPanel,
+                    "医生尚未撰写报告",
+                    "提示", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // 弹出报告查看窗口
+        showDoctorReportDialog(appointment, report);
+    }
+
+    /**
+     * 显示医生报告弹窗，包含报告内容和打印按钮
+     */
+    private void showDoctorReportDialog(Appointment appointment, Report report) {
+        JDialog reportDialog = new JDialog();
+        reportDialog.setTitle("医生报告");
+        reportDialog.setSize(550, 450);
+        reportDialog.setLocationRelativeTo(appointmentPanel);
+        reportDialog.setModal(true);
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // 顶部信息
+        CheckItemGroup group = controller.getCheckGroupByAppointmentId(appointment.getId());
+        String groupName = group != null ? group.getGroupName() : "未知";
+
+        StringBuilder headerInfo = new StringBuilder();
+        headerInfo.append("检查组：").append(groupName).append("\n");
+        headerInfo.append("检查日期：");
+        if (appointment.getExamDate() != null) {
+            headerInfo.append(appointment.getExamDate().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        } else {
+            headerInfo.append("未知");
+        }
+        headerInfo.append("\n");
+        headerInfo.append("撰写医生：").append(report.getDoctorName() != null ? report.getDoctorName() : "未知");
+        headerInfo.append("\n");
+        headerInfo.append("报告时间：");
+        if (report.getUploadTime() != null) {
+            headerInfo.append(report.getUploadTime().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+        }
+        headerInfo.append("\n");
+
+        JLabel headerLabel = new JLabel("<html>" + headerInfo.toString().replace("\n", "<br>") + "</html>");
+        headerLabel.setFont(new Font("微软雅黑", Font.PLAIN, 13));
+        headerLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(0, 0, 10, 0)));
+        mainPanel.add(headerLabel, BorderLayout.NORTH);
+
+        // 报告正文
+        JTextArea reportArea = new JTextArea();
+        reportArea.setText(report.getSummary() != null ? report.getSummary() : "（无内容）");
+        reportArea.setFont(new Font("微软雅黑", Font.PLAIN, 14));
+        reportArea.setLineWrap(true);
+        reportArea.setWrapStyleWord(true);
+        reportArea.setEditable(false);
+        reportArea.setBackground(new Color(250, 250, 250));
+        JScrollPane scrollPane = new JScrollPane(reportArea);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+        // 底部按钮
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+
+        JButton printBtn = new JButton("打印报告");
+        printBtn.setFont(new Font("微软雅黑", Font.BOLD, 14));
+        printBtn.setBackground(new Color(70, 104, 197));
+        printBtn.setForeground(Color.BLACK);
+        printBtn.setFocusPainted(false);
+        printBtn.setPreferredSize(new Dimension(120, 35));
+        printBtn.addActionListener(ev -> {
+            // 获取检查组和检查项用于导出
+            CheckItemGroup g = controller.getCheckGroupByAppointmentId(appointment.getId());
+            List<CheckItem> items = controller.getCheckItemsByAppointmentId(appointment.getId());
+            List<ExamRecord> examRecords = examService.getExamRecordsByAppointment(appointment.getId());
+
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("保存医生报告");
+            String defaultFileName = "医生报告_" +
+                    (g != null ? g.getGroupName() : "未知") + "_" +
+                    java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")) + ".docx";
+            fileChooser.setSelectedFile(new File(defaultFileName));
+
+            if (fileChooser.showSaveDialog(reportDialog) == JFileChooser.APPROVE_OPTION) {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                if (!filePath.toLowerCase().endsWith(".docx")) {
+                    filePath += ".docx";
+                }
+                try {
+                    WordExportService exportService = new WordExportService();
+                    exportService.exportAppointmentReport(filePath, appointment, g, items);
+                    JOptionPane.showMessageDialog(reportDialog,
+                            "报告已成功导出到：\n" + filePath,
+                            "导出成功", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(reportDialog,
+                            "导出失败：" + ex.getMessage(),
+                            "错误", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        bottomPanel.add(printBtn);
+
+        JButton closeBtn = new JButton("关闭");
+        closeBtn.setFont(new Font("微软雅黑", Font.BOLD, 14));
+        closeBtn.setBackground(new Color(158, 158, 158));
+        closeBtn.setForeground(Color.BLACK);
+        closeBtn.setFocusPainted(false);
+        closeBtn.setPreferredSize(new Dimension(120, 35));
+        closeBtn.addActionListener(ev -> reportDialog.dispose());
+        bottomPanel.add(closeBtn);
+
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        reportDialog.add(mainPanel);
+        reportDialog.setVisible(true);
     }
 
     /**

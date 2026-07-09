@@ -8,6 +8,13 @@ target/
 # 数据库配置（含密码，不提交）
 health-common/src/main/resources/db.properties
 
+# 本地 lib 和启动脚本
+lib/
+start.bat
+
+# 调试工具
+health-ui/src/main/java/com/healthsys/ui/debug/
+
 # 操作系统文件
 .DS_Store
 Thumbs.db

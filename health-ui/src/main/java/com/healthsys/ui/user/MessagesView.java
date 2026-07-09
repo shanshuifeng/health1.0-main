@@ -1,6 +1,8 @@
 package com.healthsys.ui.user;
 
 import com.healthsys.service.AppointmentService;
+import com.healthsys.service.MockPaymentService;
+import com.healthsys.service.PaymentService;
 import com.healthsys.common.entity.Users;
 import com.healthsys.common.entity.Appointment;
 import com.healthsys.common.entity.CheckItemGroup;
@@ -221,7 +223,31 @@ public class MessagesView {
                         "支付确认",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE);
-                if (payOption != JOptionPane.YES_OPTION) {
+                if (payOption == JOptionPane.YES_OPTION) {
+                    // 立即支付
+                    Double price = controller.getAppointmentPrice(newAppointment.getId());
+                    if (price != null) {
+                        int confirmPay = JOptionPane.showConfirmDialog(
+                                messagesPanel,
+                                "您需要支付: ¥" + price + "，是否继续？",
+                                "支付确认",
+                                JOptionPane.YES_NO_OPTION);
+                        if (confirmPay == JOptionPane.YES_OPTION) {
+                            PaymentService paymentService = new MockPaymentService();
+                            boolean paid = paymentService.pay(newAppointment.getId(), price);
+                            if (paid && controller.updatePaymentStatus(newAppointment.getId(), true)) {
+                                JOptionPane.showMessageDialog(messagesPanel,
+                                        "支付成功！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(messagesPanel,
+                                        "支付失败，请重试", "错误", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(messagesPanel,
+                                "无法获取检查组价格", "错误", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
                     JOptionPane.showMessageDialog(messagesPanel, "您可稍后支付，请注意支付截止时间", "提示",
                             JOptionPane.INFORMATION_MESSAGE);
                 }

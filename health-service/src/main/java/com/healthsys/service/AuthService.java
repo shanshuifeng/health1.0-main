@@ -25,15 +25,19 @@ public class AuthService {
 
     // ==================== 普通用户登录 ====================
 
-    public void handleLogin(String phone, String password) {
-        if (phone.isEmpty() || password.isEmpty()) {
-            fail("手机号和密码不能为空");
+    public void handleLogin(String account, String password) {
+        if (account.isEmpty() || password.isEmpty()) {
+            fail("账号和密码不能为空");
             return;
         }
 
         UserDAO userDAO = new UserDAO();
-        Users user = userDAO.getUserByPhone(phone);
-        if (user == null) { fail("手机号未注册"); return; }
+        // 优先按手机号查找，找不到再按用户名（真实姓名）查找
+        Users user = userDAO.getUserByPhone(account);
+        if (user == null) {
+            user = userDAO.getUserByUsername(account);
+        }
+        if (user == null) { fail("账号未注册"); return; }
 
         String stored = user.getPasswordHash();
         if (!PasswordUtil.verify(password, stored)) {
