@@ -24,6 +24,7 @@ public class ExamResultEntryDialog extends JDialog {
     private final Map<Long, JTextField> resultFields = new LinkedHashMap<>();
     private final Map<Long, JCheckBox> abnormalChecks = new LinkedHashMap<>();
     private final Map<Long, JTextField> noteFields = new LinkedHashMap<>();
+    private final Map<Long, String> itemNames = new LinkedHashMap<>();
     private final ExamService examService = new ExamService();
     private final AppointmentDAO appointmentDAO = new AppointmentDAO();
 
@@ -143,6 +144,7 @@ public class ExamResultEntryDialog extends JDialog {
         resultFields.put(item.getItemId(), resultField);
         abnormalChecks.put(item.getItemId(), abnormalCheck);
         noteFields.put(item.getItemId(), noteField);
+        itemNames.put(item.getItemId(), item.getItemName());
 
         return row;
     }
@@ -186,8 +188,9 @@ public class ExamResultEntryDialog extends JDialog {
             record.setExamDate(LocalDateTime.now());
 
             if (examService.existsRecord(appointment.getId(), itemId)) {
+                String itemName = itemNames.getOrDefault(itemId, String.valueOf(itemId));
                 JOptionPane.showMessageDialog(this,
-                        "检查项「" + itemId + "」已有记录，请勿重复录入。",
+                        "检查项「" + itemName + "」已有记录，请勿重复录入。",
                         "录入失败", JOptionPane.WARNING_MESSAGE);
                 return false;
             }

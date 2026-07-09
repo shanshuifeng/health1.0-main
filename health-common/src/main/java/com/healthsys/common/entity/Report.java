@@ -9,7 +9,6 @@ public class Report {
     private Long reportId;
     private Long appointmentId;
     private Long doctorId;
-    private String pdfFilePath;
     private String summary;
     private LocalDateTime uploadTime;
     private LocalDateTime createdAt;
@@ -30,9 +29,6 @@ public class Report {
 
     public Long getDoctorId() { return doctorId; }
     public void setDoctorId(Long doctorId) { this.doctorId = doctorId; }
-
-    public String getPdfFilePath() { return pdfFilePath; }
-    public void setPdfFilePath(String pdfFilePath) { this.pdfFilePath = pdfFilePath; }
 
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }

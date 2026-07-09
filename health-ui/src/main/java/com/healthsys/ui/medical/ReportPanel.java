@@ -102,8 +102,8 @@ public class ReportPanel extends JPanel {
         return null;
     }
 
-    private static class ReportTableModel extends AbstractTableModel {
-        private final String[] columnNames = {"ID", "患者", "上传时间", "有PDF"};
+    private class ReportTableModel extends AbstractTableModel {
+        private final String[] columnNames = {"ID", "患者", "上传时间"};
         private List<Report> data;
 
         public void setData(List<Report> data) { this.data = data; }
@@ -121,7 +121,6 @@ public class ReportPanel extends JPanel {
                 case 0 -> r.getReportId();
                 case 1 -> r.getUserName() != null ? r.getUserName() : "";
                 case 2 -> r.getUploadTime();
-                case 3 -> (r.getPdfFilePath() != null && !r.getPdfFilePath().isEmpty()) ? "是" : "否";
                 default -> null;
             };
         }

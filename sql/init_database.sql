@@ -142,7 +142,6 @@ CREATE TABLE IF NOT EXISTS reports (
     report_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '报告唯一标识',
     appointment_id BIGINT NOT NULL COMMENT '关联预约（一对一）',
     doctor_id BIGINT NOT NULL COMMENT '上传/审核医生ID',
-    pdf_file_path VARCHAR(500) COMMENT 'PDF文件存储路径/URL',
     summary TEXT COMMENT '报告总结/医生综合建议',
     upload_time DATETIME COMMENT '上传时间',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

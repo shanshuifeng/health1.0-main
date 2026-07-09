@@ -8,7 +8,10 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class CheckGroupDialog extends JDialog {
     public static final int OK_OPTION = 0;
@@ -263,26 +266,12 @@ public class CheckGroupDialog extends JDialog {
     // ── 按钮 ──
     private JPanel buildButtons() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 8));
-        panel.setBackground(Color.WHITE);
+        panel.setBackground(new Color(245, 245, 245));
 
-        JButton cancel = new JButton("取消");
-        cancel.setFont(new Font("微软雅黑", Font.PLAIN, 14));
-        cancel.setBackground(Color.WHITE);
-        cancel.setForeground(new Color(100, 100, 100));
-        cancel.setFocusPainted(false);
-        cancel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(210, 210, 210)),
-                BorderFactory.createEmptyBorder(7, 24, 7, 24)));
+        JButton cancel = CrudPanel.createStyledButton("取消", new Color(200, 200, 200));
         cancel.addActionListener(e -> dispose());
 
-        JButton ok = new JButton("确定");
-        ok.setFont(new Font("微软雅黑", Font.BOLD, 14));
-        ok.setBackground(PRIMARY);
-        ok.setForeground(Color.WHITE);
-        ok.setFocusPainted(false);
-        ok.setOpaque(true);
-        ok.setBorderPainted(false);
-        ok.setBorder(BorderFactory.createEmptyBorder(7, 28, 7, 28));
+        JButton ok = CrudPanel.createStyledButton("确定", new Color(102, 204, 153));
         ok.addActionListener(e -> {
             if (validateInput()) {
                 option = OK_OPTION;

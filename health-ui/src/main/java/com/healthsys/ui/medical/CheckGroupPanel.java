@@ -128,8 +128,8 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
         tableModel = new CheckGroupTableModel();
         table = new JTable(tableModel);
         table.setFont(new Font("微软雅黑", Font.PLAIN, 13));
-        table.getTableHeader().setFont(new Font("微软雅黑", Font.BOLD, 13));
-        table.setRowHeight(34);
+        table.getTableHeader().setFont(new Font("微软雅黑", Font.BOLD, 14));
+        table.setRowHeight(30);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
         table.setSelectionBackground(new Color(220, 240, 255));
@@ -144,7 +144,7 @@ public class CheckGroupPanel extends CrudPanel<CheckItemGroup> {
                 Component c = super.getTableCellRendererComponent(table, value,
                         isSelected, hasFocus, row, col);
                 if (!isSelected) {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(247, 248, 252));
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 248, 248));
                 }
                 setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
                 return c;

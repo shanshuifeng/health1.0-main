@@ -7,7 +7,6 @@ import com.healthsys.dao.ReportDAO;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,26 +16,39 @@ public class ReportEditDialog extends JDialog {
 
     private int result = CANCEL_OPTION;
     private final Long doctorId;
+    private final Long fixedAppointmentId;
     private final Report existingReport;
     private final ReportDAO reportDAO = new ReportDAO();
     private final AppointmentDAO appointmentDAO = new AppointmentDAO();
 
     private JComboBox<String> appointmentCombo;
     private JTextArea summaryArea;
-    private JTextField pdfPathField;
     private List<Appointment> availableAppointments;
 
+    /** 从报告管理页调用：用户自选预约 */
     public ReportEditDialog(Long doctorId, Report existingReport) {
+        this(doctorId, null, existingReport);
+    }
+
+    /** 从预约页调用：预约已确定 */
+    public ReportEditDialog(Long doctorId, Long appointmentId, Report existingReport) {
         this.doctorId = doctorId;
+        this.fixedAppointmentId = appointmentId;
         this.existingReport = existingReport;
         setTitle(existingReport == null ? "撰写报告" : "编辑报告");
         setModal(true);
-        setSize(650, 500);
+        setSize(600, 420);
         setLocationRelativeTo(null);
         initUI();
+        if (existingReport != null || fixedAppointmentId != null) {
+            appointmentCombo.setEnabled(false);
+        }
         if (existingReport != null) {
             loadExistingData();
-            appointmentCombo.setEnabled(false);
+        }
+        // 撰写模式下：只显示尚未写过报告的预约
+        if (existingReport == null && fixedAppointmentId == null) {
+            filterOutReported();
         }
     }
 
@@ -85,35 +97,30 @@ public class ReportEditDialog extends JDialog {
         summaryPanel.add(summaryLabel, BorderLayout.NORTH);
         summaryPanel.add(summaryScroll, BorderLayout.CENTER);
 
-        // PDF附件
-        JPanel pdfPanel = new JPanel(new BorderLayout(10, 0));
-        pdfPanel.setBackground(Color.WHITE);
-        pdfPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        JLabel pdfLabel = new JLabel("PDF附件：");
-        pdfLabel.setFont(labelFont);
-        pdfPathField = new JTextField();
-        pdfPathField.setFont(fieldFont);
-        pdfPathField.setEditable(false);
-        JButton browseBtn = new JButton("选择文件");
-        browseBtn.setFont(new Font("微软雅黑", Font.PLAIN, 12));
-        browseBtn.addActionListener(e -> choosePdf());
-        pdfPanel.add(pdfLabel, BorderLayout.WEST);
-        pdfPanel.add(pdfPathField, BorderLayout.CENTER);
-        pdfPanel.add(browseBtn, BorderLayout.EAST);
-
         panel.add(apptPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         panel.add(summaryPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 15)));
-        panel.add(pdfPanel);
 
         return panel;
     }
 
     private void loadAppointments() {
-        // 已完成状态的预约
-        availableAppointments = appointmentDAO.searchByFilters(doctorId, null, null, "COMPLETED");
+        if (fixedAppointmentId != null) {
+            Appointment a = appointmentDAO.getById(fixedAppointmentId);
+            availableAppointments = a != null ? List.of(a) : List.of();
+        } else {
+            availableAppointments = appointmentDAO.searchByFilters(doctorId, null, null, "COMPLETED");
+        }
         appointmentCombo.removeAllItems();
+        for (Appointment a : availableAppointments) {
+            String label = a.getUserName() + " — " + a.getExamDate() + " — " + a.getGroupName();
+            appointmentCombo.addItem(label);
+        }
+    }
+
+    private void filterOutReported() {
+        appointmentCombo.removeAllItems();
+        availableAppointments.removeIf(a -> reportDAO.getByAppointmentId(a.getId()) != null);
         for (Appointment a : availableAppointments) {
             String label = a.getUserName() + " — " + a.getExamDate() + " — " + a.getGroupName();
             appointmentCombo.addItem(label);
@@ -130,18 +137,6 @@ public class ReportEditDialog extends JDialog {
         }
         if (existingReport.getSummary() != null) {
             summaryArea.setText(existingReport.getSummary());
-        }
-        if (existingReport.getPdfFilePath() != null) {
-            pdfPathField.setText(existingReport.getPdfFilePath());
-        }
-    }
-
-    private void choosePdf() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PDF文件 (*.pdf)", "pdf"));
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File file = chooser.getSelectedFile();
-            pdfPathField.setText(file.getAbsolutePath());
         }
     }
 
@@ -166,18 +161,22 @@ public class ReportEditDialog extends JDialog {
     }
 
     private boolean saveReport() {
-        int idx = appointmentCombo.getSelectedIndex();
-        if (idx < 0) {
-            JOptionPane.showMessageDialog(this, "请选择关联预约", "提示", JOptionPane.WARNING_MESSAGE);
-            return false;
+        Long appointmentId;
+        if (fixedAppointmentId != null) {
+            appointmentId = fixedAppointmentId;
+        } else {
+            int idx = appointmentCombo.getSelectedIndex();
+            if (idx < 0) {
+                JOptionPane.showMessageDialog(this, "请选择关联预约", "提示", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
+            appointmentId = availableAppointments.get(idx).getId();
         }
         String summary = summaryArea.getText().trim();
         if (summary.isEmpty()) {
             JOptionPane.showMessageDialog(this, "请填写诊断报告", "提示", JOptionPane.WARNING_MESSAGE);
             return false;
         }
-
-        Long appointmentId = availableAppointments.get(idx).getId();
 
         if (existingReport == null) {
             // 检查是否已有报告
@@ -190,8 +189,6 @@ public class ReportEditDialog extends JDialog {
             report.setAppointmentId(appointmentId);
             report.setDoctorId(doctorId);
             report.setSummary(summary);
-            String pdfPath = pdfPathField.getText().trim();
-            report.setPdfFilePath(pdfPath.isEmpty() ? null : pdfPath);
             report.setUploadTime(LocalDateTime.now());
             if (reportDAO.create(report)) {
                 JOptionPane.showMessageDialog(this, "报告保存成功", "成功", JOptionPane.INFORMATION_MESSAGE);
@@ -202,8 +199,6 @@ public class ReportEditDialog extends JDialog {
             }
         } else {
             existingReport.setSummary(summary);
-            String pdfPath = pdfPathField.getText().trim();
-            existingReport.setPdfFilePath(pdfPath.isEmpty() ? null : pdfPath);
             if (reportDAO.update(existingReport)) {
                 JOptionPane.showMessageDialog(this, "报告更新成功", "成功", JOptionPane.INFORMATION_MESSAGE);
                 return true;

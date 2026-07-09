@@ -1,7 +1,9 @@
 package com.healthsys.ui.medical;
 
 import com.healthsys.common.entity.Appointment;
+import com.healthsys.common.entity.Report;
 import com.healthsys.dao.AppointmentDAO;
+import com.healthsys.dao.ReportDAO;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
@@ -38,7 +40,7 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
         sp.add(new JLabel("日期从:"));
         dateFromChooser = new JDateChooser();
         dateFromChooser.setPreferredSize(new Dimension(120, 25));
-        dateFromChooser.setDate(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        dateFromChooser.setDate(Date.from(LocalDate.now().minusDays(30).atStartOfDay(ZoneId.systemDefault()).toInstant()));
         sp.add(dateFromChooser);
 
         sp.add(new JLabel("到:"));
@@ -144,10 +146,9 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
                 JOptionPane.showMessageDialog(this, "请先完成检查后再上传报告", "提示", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            JFrame parentFrame = getParentFrame();
-            ReportDialog dialog = new ReportDialog(parentFrame, selected.getId(), doctorId);
-            dialog.setVisible(true);
-            if (dialog.isSaved()) {
+            Report existing = new ReportDAO().getByAppointmentId(selected.getId());
+            ReportEditDialog dialog = new ReportEditDialog(doctorId, selected.getId(), existing);
+            if (dialog.showDialog() == ReportEditDialog.OK_OPTION) {
                 refreshData();
             }
         });
@@ -164,14 +165,6 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
             showExistingResults(selected);
         });
         buttonPanel.add(viewResultBtn);
-    }
-
-    private JFrame getParentFrame() {
-        Container parent = getParent();
-        while (parent != null && !(parent instanceof JFrame)) {
-            parent = parent.getParent();
-        }
-        return (JFrame) parent;
     }
 
     private void showExistingResults(Appointment appointment) {
@@ -242,7 +235,7 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
     @Override
     public void refreshData() {
         LocalDate today = LocalDate.now();
-        List<Appointment> result = appointmentDAO.searchByFilters(doctorId, today, today, null);
+        List<Appointment> result = appointmentDAO.searchByFilters(doctorId, today.minusDays(30), today, null);
         tableModel.setData(result);
         tableModel.fireTableDataChanged();
     }
