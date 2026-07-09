@@ -187,11 +187,20 @@ public class MainView extends JPanel {
     }
 
     private void showReportManagement() {
-        if (reportPanel == null) {
-            reportPanel = new ReportPanel(doctorId);
-            contentPanel.add(reportPanel, "reports");
+        try {
+            if (reportPanel == null) {
+                reportPanel = new ReportPanel(doctorId);
+                contentPanel.add(reportPanel, "reports");
+            } else {
+                reportPanel.refreshData();
+            }
+            ((CardLayout) contentPanel.getLayout()).show(contentPanel, "reports");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "报告管理加载失败：" + ex.toString(),
+                    "错误", JOptionPane.ERROR_MESSAGE);
         }
-        ((CardLayout) contentPanel.getLayout()).show(contentPanel, "reports");
     }
 }
 

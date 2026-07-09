@@ -342,6 +342,7 @@ INSERT INTO group_item_relation (group_id, item_id, sort_order) VALUES
 (6,48,37),(6,49,38),(6,50,39),(6,51,40),(6,53,41)
 ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order);
 
+
 -- 银发关怀 (group_id=7): 全面检查
 INSERT INTO group_item_relation (group_id, item_id, sort_order) VALUES
 (7,1,1),(7,2,2),(7,3,3),(7,4,4),(7,5,5),(7,6,6),(7,7,7),
