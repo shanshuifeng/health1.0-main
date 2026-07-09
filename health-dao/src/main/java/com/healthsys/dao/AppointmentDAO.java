@@ -15,11 +15,13 @@ public class AppointmentDAO {
     public List<Appointment> search(String userName) {
         List<Appointment> appointments = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT a.*, u.real_name as user_name, cg.group_name as group_name, d.name as doctor_name " +
+                "SELECT a.*, u.real_name as user_name, cg.group_name as group_name, d.name as doctor_name, " +
+                "(r.report_id IS NOT NULL) as has_report " +
                 "FROM appointments a " +
                 "LEFT JOIN users u ON a.user_id = u.user_id " +
                 "LEFT JOIN check_groups cg ON a.group_id = cg.group_id " +
                 "LEFT JOIN doctors d ON a.doctor_id = d.doctor_id " +
+                "LEFT JOIN reports r ON a.appointment_id = r.appointment_id " +
                 "WHERE 1=1");
         if (userName != null && !userName.isEmpty()) sql.append(" AND u.real_name LIKE ?");
         sql.append(" ORDER BY a.appointment_time DESC");

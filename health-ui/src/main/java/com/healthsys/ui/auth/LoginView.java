@@ -27,8 +27,8 @@ public class LoginView extends JFrame {
     private JButton registerButton;
     private JCheckBox rememberMeCheck;
     private JCheckBox showPasswordCheck;
-    private JComboBox<String> loginTypeCombo;
     private AuthService authService;
+    private volatile boolean isLoggingIn = false; // 防止重复点击
 
     public LoginView() {
         initUI();
@@ -43,17 +43,13 @@ public class LoginView extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Main container with proper padding
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBorder(BorderFactory.createEmptyBorder(
                 COMPONENT_PADDING, COMPONENT_PADDING,
                 COMPONENT_PADDING, COMPONENT_PADDING));
         mainPanel.setBackground(BACKGROUND_COLOR);
 
-        // Application title
         mainPanel.add(createTitlePanel(), BorderLayout.NORTH);
-
-        // Login form
         mainPanel.add(createFormPanel(), BorderLayout.CENTER);
 
         add(mainPanel);
@@ -76,31 +72,24 @@ public class LoginView extends JFrame {
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setOpaque(false);
 
-        // Input fields
         usernameField = createInputField();
         passwordField = new JPasswordField();
         passwordField.setEchoChar('•');
 
-        formPanel.add(createFieldPanel("用户名:", usernameField));
+        formPanel.add(createFieldPanel("账号:", usernameField));
         formPanel.add(Box.createVerticalStrut(ROW_GAP));
         formPanel.add(createFieldPanel("密码:", passwordField));
         formPanel.add(Box.createVerticalStrut(ROW_GAP));
 
-        // 登录类型选择
-        JPanel typePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        typePanel.setOpaque(false);
-        loginTypeCombo = new JComboBox<>(new String[]{"普通用户", "管理员", "医生"});
-        loginTypeCombo.setFont(LABEL_FONT);
-        typePanel.add(new JLabel("登录身份:"));
-        typePanel.add(loginTypeCombo);
-        formPanel.add(typePanel);
+        JLabel hintLabel = new JLabel("支持手机号或用户名登录", JLabel.CENTER);
+        hintLabel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+        hintLabel.setForeground(Color.GRAY);
+        formPanel.add(hintLabel);
         formPanel.add(Box.createVerticalStrut(ROW_GAP));
 
-        // Options panel
         formPanel.add(createOptionsPanel());
         formPanel.add(Box.createVerticalStrut(ROW_GAP * 2));
 
-        // Buttons panel
         formPanel.add(createButtonPanel());
 
         return formPanel;
@@ -133,7 +122,7 @@ public class LoginView extends JFrame {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 0));
         panel.setOpaque(false);
 
-        rememberMeCheck = new JCheckBox("记住用户名");
+        rememberMeCheck = new JCheckBox("记住账号");
         rememberMeCheck.setFont(LABEL_FONT);
 
         showPasswordCheck = new JCheckBox("显示密码");
@@ -177,48 +166,6 @@ public class LoginView extends JFrame {
 
     private void initController() {
         authService = new AuthService();
-        authService.setLoginListener(new AuthService.LoginListener() {
-            @Override
-            public void onLoginSuccess(Users user) {
-                savePreferences();
-                try {
-                    redirectBasedOnRole(user);
-                    dispose();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(LoginView.this,
-                            "界面加载失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-
-            @Override
-            public void onLoginFailed(String errorMessage) {
-                EventQueue.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(
-                            LoginView.this,
-                            errorMessage,
-                            "登录失败",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-                    passwordField.setText("");
-                    passwordField.requestFocus();
-                });
-            }
-
-            @Override public void onFirstLogin(Users user) {
-                savePreferences();
-                try {
-                    redirectBasedOnRole(user);
-                    dispose();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(LoginView.this,
-                            "界面加载失败: " + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-            @Override public void onPasswordChangeSuccess(Users user) {}
-            @Override public void onPasswordChangeFailed(String errorMessage) {}
-        });
     }
 
     private void redirectBasedOnRole(Users user) {
@@ -290,26 +237,87 @@ public class LoginView extends JFrame {
     }
 
     private void handleLogin() {
+        // 防止重复点击
+        if (isLoggingIn) {
+            return;
+        }
+        isLoggingIn = true;
+
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
 
         if (username.isEmpty()) {
-            showWarning("请输入用户名" + ("管理员".equals(loginTypeCombo.getSelectedItem()) ? "（管理员账号）" : "（手机号）"));
+            showWarning("请输入账号（手机号或用户名）");
             usernameField.requestFocus();
+            isLoggingIn = false;
             return;
         }
 
         if (password.isEmpty()) {
             showWarning("请输入密码");
             passwordField.requestFocus();
+            isLoggingIn = false;
             return;
         }
 
-        String type = (String) loginTypeCombo.getSelectedItem();
-        switch (type) {
-            case "管理员" -> authService.handleAdminLogin(username, password);
-            case "医生"   -> authService.handleDoctorLogin(username, password);
-            default       -> authService.handleLogin(username, password);
+        // 设置登录监听器（在 UI 线程中执行）
+        authService.setLoginListener(new AuthService.LoginListener() {
+            private int attempt = 0;
+
+            @Override
+            public void onLoginSuccess(Users user) {
+                SwingUtilities.invokeLater(() -> {
+                    savePreferences();
+                    dispose();
+                    redirectBasedOnRole(user);
+                    isLoggingIn = false;
+                });
+            }
+
+            @Override
+            public void onLoginFailed(String errorMessage) {
+                SwingUtilities.invokeLater(() -> {
+                    attempt++;
+                    if (attempt == 1) {
+                        authService.handleDoctorLogin(username, password);
+                    } else if (attempt == 2) {
+                        authService.handleAdminLogin(username, password);
+                    } else {
+                        JOptionPane.showMessageDialog(
+                                LoginView.this,
+                                "账号或密码错误，请重试",
+                                "登录失败",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                        passwordField.setText("");
+                        passwordField.requestFocus();
+                        attempt = 0;
+                        isLoggingIn = false;
+                    }
+                });
+            }
+
+            @Override
+            public void onFirstLogin(Users user) {
+                SwingUtilities.invokeLater(() -> {
+                    savePreferences();
+                    dispose();
+                    redirectBasedOnRole(user);
+                    isLoggingIn = false;
+                });
+            }
+
+            @Override public void onPasswordChangeSuccess(Users user) {}
+            @Override public void onPasswordChangeFailed(String errorMessage) {}
+        });
+
+        // 开始登录尝试
+        try {
+            authService.handleLogin(username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("登录异常", "登录过程中发生错误: " + e.getMessage());
+            isLoggingIn = false;
         }
     }
 

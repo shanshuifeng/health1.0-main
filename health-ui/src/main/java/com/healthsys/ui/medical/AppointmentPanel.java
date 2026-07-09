@@ -13,16 +13,16 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AppointmentPanel extends CrudPanel<Appointment> {
     private final Long doctorId;
     private AppointmentDAO appointmentDAO;
     private JTable table;
     private AppointmentTableModel tableModel;
-    private JTextField userNameSearchField;
     private JDateChooser dateFromChooser;
     private JDateChooser dateToChooser;
-    private JComboBox<String> statusFilterCombo;
+    private JTextField userNameSearchField;
     private String quickStatusFilter = null;
 
     public AppointmentPanel(Long doctorId) {
@@ -36,71 +36,38 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
 
     private void setupSearchPanel() {
         JPanel sp = getSearchPanel();
+        sp.setLayout(new FlowLayout(FlowLayout.RIGHT, 8, 5));
+        Font fieldFont = new Font("微软雅黑", Font.PLAIN, 12);
 
-        sp.add(new JLabel("日期从:"));
         dateFromChooser = new JDateChooser();
-        dateFromChooser.setPreferredSize(new Dimension(120, 25));
+        dateFromChooser.setPreferredSize(new Dimension(105, 28));
+        dateFromChooser.setDateFormatString("yyyy-MM-dd");
         dateFromChooser.setDate(Date.from(LocalDate.now().minusDays(30).atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        sp.add(dateFromChooser);
 
-        sp.add(new JLabel("到:"));
         dateToChooser = new JDateChooser();
-        dateToChooser.setPreferredSize(new Dimension(120, 25));
+        dateToChooser.setPreferredSize(new Dimension(105, 28));
+        dateToChooser.setDateFormatString("yyyy-MM-dd");
         dateToChooser.setDate(Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+
+        userNameSearchField = new JTextField(6);
+        userNameSearchField.setFont(fieldFont);
+        userNameSearchField.setPreferredSize(new Dimension(70, 28));
+
+        JLabel dateLabel = new JLabel("日期");
+        dateLabel.setFont(fieldFont);
+        JLabel toLabel = new JLabel("至");
+        toLabel.setFont(fieldFont);
+        JLabel userLabel = new JLabel("用户");
+        userLabel.setFont(fieldFont);
+
+        sp.add(dateLabel);
+        sp.add(dateFromChooser);
+        sp.add(toLabel);
         sp.add(dateToChooser);
-
-        sp.add(new JLabel("状态:"));
-        statusFilterCombo = new JComboBox<>(new String[]{"全部", "待检查", "已完成", "已取消"});
-        statusFilterCombo.setPreferredSize(new Dimension(90, 25));
-        statusFilterCombo.setFont(new Font("微软雅黑", Font.PLAIN, 12));
-        sp.add(statusFilterCombo);
-
-        sp.add(new JLabel("用户:"));
-        userNameSearchField = new JTextField(8);
+        sp.add(userLabel);
         sp.add(userNameSearchField);
 
-        getSearchButton().addActionListener(e -> searchAppointments());
-    }
-
-    private void searchAppointments() {
-        Date fromDate = dateFromChooser.getDate();
-        Date toDate = dateToChooser.getDate();
-        final LocalDate dateFrom = fromDate != null
-                ? fromDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-        final LocalDate dateTo = toDate != null
-                ? toDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-
-        String statusDisplay = (String) statusFilterCombo.getSelectedItem();
-        String status = statusToCode(statusDisplay);
-
-        String userName = userNameSearchField.getText().trim();
-
-        List<Appointment> result;
-        if (!userName.isEmpty()) {
-            result = appointmentDAO.search(userName);
-            if (dateFrom != null || dateTo != null || status != null) {
-                result = result.stream().filter(a -> {
-                    boolean match = true;
-                    if (dateFrom != null && a.getExamDate() != null && a.getExamDate().isBefore(dateFrom)) match = false;
-                    if (dateTo != null && a.getExamDate() != null && a.getExamDate().isAfter(dateTo)) match = false;
-                    if (status != null && !status.equals(a.getStatus())) match = false;
-                    return match;
-                }).toList();
-            }
-        } else {
-            result = appointmentDAO.searchByFilters(doctorId, dateFrom, dateTo, status);
-        }
-        tableModel.setData(result);
-        tableModel.fireTableDataChanged();
-    }
-
-    private String statusToCode(String display) {
-        return switch (display) {
-            case "待检查" -> "PENDING";
-            case "已完成" -> "COMPLETED";
-            case "已取消" -> "CANCELLED";
-            default -> null;
-        };
+        getSearchButton().addActionListener(e -> refreshData());
     }
 
     private void setupButtonListeners() {
@@ -187,10 +154,10 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
         table.setRowHeight(36);
         table.setSelectionBackground(new Color(220, 230, 250));
         table.setSelectionForeground(Color.BLACK);
-        table.setGridColor(new Color(220, 220, 220));
+        table.setGridColor(new Color(190, 190, 190));
         table.getTableHeader().setBackground(new Color(240, 240, 240));
         table.setShowGrid(true);
-        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setIntercellSpacing(new Dimension(1, 1));
 
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
@@ -281,18 +248,44 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
     @Override
     public void refreshData() {
         LocalDate today = LocalDate.now();
-        String daoStatus = null;
-        // "REPORTED" / "UNREPORTED" 不是数据库状态，需查全部 COMPLETED 再在内存中过滤
+
+        Date fromDate = dateFromChooser != null ? dateFromChooser.getDate() : null;
+        Date toDate = dateToChooser != null ? dateToChooser.getDate() : null;
+        LocalDate dateFrom = fromDate != null
+                ? fromDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : today.minusDays(30);
+        LocalDate dateTo = toDate != null
+                ? toDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : today;
+
+        String userName = userNameSearchField != null ? userNameSearchField.getText().trim() : "";
+
+        final String daoStatus;
         if ("REPORTED".equals(quickStatusFilter) || "UNREPORTED".equals(quickStatusFilter)) {
             daoStatus = "COMPLETED";
         } else {
             daoStatus = quickStatusFilter;
         }
-        List<Appointment> result = appointmentDAO.searchByFilters(doctorId, today.minusDays(30), today, daoStatus);
+
+        List<Appointment> result;
+        if (!userName.isEmpty()) {
+            result = appointmentDAO.search(userName);
+            if (dateFrom != null || dateTo != null || daoStatus != null) {
+                LocalDate finalDateFrom = dateFrom;
+                LocalDate finalDateTo = dateTo;
+                result = result.stream().filter(a -> {
+                    if (finalDateFrom != null && a.getExamDate() != null && a.getExamDate().isBefore(finalDateFrom)) return false;
+                    if (finalDateTo != null && a.getExamDate() != null && a.getExamDate().isAfter(finalDateTo)) return false;
+                    if (daoStatus != null && !daoStatus.equals(a.getStatus())) return false;
+                    return true;
+                }).collect(Collectors.toList());
+            }
+        } else {
+            result = appointmentDAO.searchByFilters(doctorId, dateFrom, dateTo, daoStatus);
+        }
+
         if ("REPORTED".equals(quickStatusFilter)) {
-            result = result.stream().filter(a -> Boolean.TRUE.equals(a.getHasReport())).toList();
+            result = result.stream().filter(a -> Boolean.TRUE.equals(a.getHasReport())).collect(Collectors.toList());
         } else if ("UNREPORTED".equals(quickStatusFilter)) {
-            result = result.stream().filter(a -> !Boolean.TRUE.equals(a.getHasReport())).toList();
+            result = result.stream().filter(a -> !Boolean.TRUE.equals(a.getHasReport())).collect(Collectors.toList());
         }
         tableModel.setData(result);
         tableModel.fireTableDataChanged();

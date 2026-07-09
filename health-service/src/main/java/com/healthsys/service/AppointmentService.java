@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 public class AppointmentService {
     private AppointmentDAO appointmentDAO;
@@ -49,6 +50,7 @@ public class AppointmentService {
         LocalDateTime ldt = appointmentTime.toInstant().atZone(java.time.ZoneId.of("UTC")).toLocalDateTime();
         Appointment appointment = new Appointment(user.getId(), groupId, ldt);
         appointment.setExamDate(ldt.toLocalDate());
+        appointment.setExamTimeSlot(ldt.getHour() < 12 ? "上午" : "下午");
         appointment.setDoctorId(doctorId);
         return appointmentDAO.createAppointment(appointment) ? appointment : null;
     }
@@ -58,6 +60,7 @@ public class AppointmentService {
         LocalDateTime ldt = appointmentTime.toInstant().atZone(java.time.ZoneId.of("UTC")).toLocalDateTime();
         Appointment appointment = new Appointment(user.getId(), groupId, ldt);
         appointment.setExamDate(ldt.toLocalDate());
+        appointment.setExamTimeSlot(ldt.getHour() < 12 ? "上午" : "下午");
         return appointmentDAO.createAppointment(appointment) ? appointment : null;
     }
 
@@ -87,7 +90,7 @@ public class AppointmentService {
     public List<Appointment> getUserAppointmentsByStatus(long userId, String status) {
         return appointmentDAO.getUserAppointments(userId).stream()
                 .filter(a -> status.equals(a.getStatus()))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public boolean updatePaymentStatus(Long appointmentId, boolean paid) {
