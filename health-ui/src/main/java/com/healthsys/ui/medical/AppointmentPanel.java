@@ -23,6 +23,7 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
     private JDateChooser dateFromChooser;
     private JDateChooser dateToChooser;
     private JComboBox<String> statusFilterCombo;
+    private String quickStatusFilter = null;
 
     public AppointmentPanel(Long doctorId) {
         this.doctorId = doctorId;
@@ -210,15 +211,45 @@ public class AppointmentPanel extends CrudPanel<Appointment> {
         }
         table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
+        // 快速分类按钮
+        JPanel quickFilterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        JButton pendingBtn = new JButton("待检查");
+        JButton completedBtn = new JButton("已完成");
+        JButton cancelledBtn = new JButton("已取消");
+        JButton allBtn = new JButton("全部");
+        Font ff = new Font("微软雅黑", Font.BOLD, 12);
+        for (JButton btn : new JButton[]{pendingBtn, completedBtn, cancelledBtn, allBtn}) {
+            btn.setFont(ff); btn.setFocusPainted(false);
+            btn.setPreferredSize(new Dimension(80, 28));
+        }
+        pendingBtn.setBackground(new Color(255, 193, 7)); pendingBtn.setForeground(Color.BLACK);
+        completedBtn.setBackground(new Color(76, 175, 80)); completedBtn.setForeground(Color.BLACK);
+        cancelledBtn.setBackground(new Color(158, 158, 158)); cancelledBtn.setForeground(Color.BLACK);
+        allBtn.setBackground(new Color(70, 104, 197)); allBtn.setForeground(Color.BLACK);
+
+        pendingBtn.addActionListener(e -> { quickStatusFilter = "PENDING"; refreshData(); });
+        completedBtn.addActionListener(e -> { quickStatusFilter = "COMPLETED"; refreshData(); });
+        cancelledBtn.addActionListener(e -> { quickStatusFilter = "CANCELLED"; refreshData(); });
+        allBtn.addActionListener(e -> { quickStatusFilter = null; refreshData(); });
+
+        quickFilterPanel.add(allBtn);
+        quickFilterPanel.add(pendingBtn);
+        quickFilterPanel.add(completedBtn);
+        quickFilterPanel.add(cancelledBtn);
+
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        setContent(scrollPane);
+
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.add(quickFilterPanel, BorderLayout.NORTH);
+        contentPanel.add(scrollPane, BorderLayout.CENTER);
+        setContent(contentPanel);
     }
 
     @Override
     public void refreshData() {
         LocalDate today = LocalDate.now();
-        List<Appointment> result = appointmentDAO.searchByFilters(doctorId, today.minusDays(30), today, null);
+        List<Appointment> result = appointmentDAO.searchByFilters(doctorId, today.minusDays(30), today, quickStatusFilter);
         tableModel.setData(result);
         tableModel.fireTableDataChanged();
     }

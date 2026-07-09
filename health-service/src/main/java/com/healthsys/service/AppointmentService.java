@@ -37,35 +37,35 @@ public class AppointmentService {
     }
 
     // 新版：支持examDate和examTimeSlot
-    public boolean createAppointment(Users user, Long groupId, LocalDate examDate, String examTimeSlot) {
+    public Appointment createAppointment(Users user, Long groupId, LocalDate examDate, String examTimeSlot) {
         Appointment appointment = new Appointment(user.getId(), groupId, LocalDateTime.now());
         appointment.setExamDate(examDate);
         appointment.setExamTimeSlot(examTimeSlot);
-        return appointmentDAO.createAppointment(appointment);
+        return appointmentDAO.createAppointment(appointment) ? appointment : null;
     }
 
     // 新版：支持选择医生
-    public boolean createAppointment(Users user, Long groupId, java.util.Date appointmentTime, Long doctorId) {
+    public Appointment createAppointment(Users user, Long groupId, java.util.Date appointmentTime, Long doctorId) {
         LocalDateTime ldt = appointmentTime.toInstant().atZone(java.time.ZoneId.of("UTC")).toLocalDateTime();
         Appointment appointment = new Appointment(user.getId(), groupId, ldt);
         appointment.setExamDate(ldt.toLocalDate());
         appointment.setDoctorId(doctorId);
-        return appointmentDAO.createAppointment(appointment);
+        return appointmentDAO.createAppointment(appointment) ? appointment : null;
     }
 
     // 兼容旧版：用java.util.Date（转为LocalDateTime作为预约时间）
-    public boolean createAppointment(Users user, Long groupId, java.util.Date appointmentTime) {
+    public Appointment createAppointment(Users user, Long groupId, java.util.Date appointmentTime) {
         LocalDateTime ldt = appointmentTime.toInstant().atZone(java.time.ZoneId.of("UTC")).toLocalDateTime();
         Appointment appointment = new Appointment(user.getId(), groupId, ldt);
         appointment.setExamDate(ldt.toLocalDate());
-        return appointmentDAO.createAppointment(appointment);
+        return appointmentDAO.createAppointment(appointment) ? appointment : null;
     }
 
     // 完全兼容旧版签名
-    public boolean createAppointment(Users user, Long groupId, LocalDateTime appointmentTime) {
+    public Appointment createAppointment(Users user, Long groupId, LocalDateTime appointmentTime) {
         Appointment appointment = new Appointment(user.getId(), groupId, appointmentTime);
         appointment.setExamDate(appointmentTime.toLocalDate());
-        return appointmentDAO.createAppointment(appointment);
+        return appointmentDAO.createAppointment(appointment) ? appointment : null;
     }
 
     public List<Appointment> getUserAppointments(Users user) {

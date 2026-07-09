@@ -26,6 +26,7 @@ public class AppointmentView {
     private AppointmentService controller;
     private JTable appointmentTable;
     private DefaultTableModel tableModel;
+    private String currentFilter = "PENDING"; // 默认显示未处理
 
     public AppointmentView(Users currentUser) {
         this.currentUser = currentUser;
@@ -60,6 +61,36 @@ public class AppointmentView {
         rightToolbar.add(printBtn);
         toolbarPanel.add(rightToolbar, BorderLayout.EAST);
 
+        // 分类按钮
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        JButton pendingBtn = new JButton("未处理");
+        JButton completedBtn = new JButton("已处理");
+        JButton cancelledBtn = new JButton("已取消");
+        Font filterFont = new Font("微软雅黑", Font.BOLD, 12);
+        for (JButton btn : new JButton[]{pendingBtn, completedBtn, cancelledBtn}) {
+            btn.setFont(filterFont);
+            btn.setFocusPainted(false);
+            btn.setPreferredSize(new Dimension(80, 28));
+        }
+        pendingBtn.setBackground(new Color(255, 193, 7));
+        pendingBtn.setForeground(Color.BLACK);
+        completedBtn.setBackground(new Color(76, 175, 80));
+        completedBtn.setForeground(Color.BLACK);
+        cancelledBtn.setBackground(new Color(158, 158, 158));
+        cancelledBtn.setForeground(Color.BLACK);
+
+        pendingBtn.addActionListener(e -> { currentFilter = "PENDING"; loadAppointmentData(); });
+        completedBtn.addActionListener(e -> { currentFilter = "COMPLETED"; loadAppointmentData(); });
+        cancelledBtn.addActionListener(e -> { currentFilter = "CANCELLED"; loadAppointmentData(); });
+
+        filterPanel.add(pendingBtn);
+        filterPanel.add(completedBtn);
+        filterPanel.add(cancelledBtn);
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(toolbarPanel, BorderLayout.NORTH);
+        topPanel.add(filterPanel, BorderLayout.SOUTH);
+
         // 预约表格
         String[] columnNames = { "ID", "检查组/项目", "类型", "预约时间", "详情", "支付状态", "操作" };
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -80,7 +111,7 @@ public class AppointmentView {
 
         JScrollPane scrollPane = new JScrollPane(appointmentTable);
 
-        appointmentPanel.add(toolbarPanel, BorderLayout.NORTH);
+        appointmentPanel.add(topPanel, BorderLayout.NORTH);
         appointmentPanel.add(scrollPane, BorderLayout.CENTER);
     }
 
@@ -90,7 +121,8 @@ public class AppointmentView {
 
     private void loadAppointmentData() {
         tableModel.setRowCount(0);
-        List<Appointment> appointments = controller.getUserAppointments(currentUser);
+        List<Appointment> appointments = controller.getUserAppointmentsByStatus(
+                currentUser.getId(), currentFilter);
 
         for (Appointment appointment : appointments) {
             String itemName = "";
@@ -369,7 +401,8 @@ public class AppointmentView {
             int doctorIndex = doctorCombo.getSelectedIndex();
             Long doctorId = doctorIndex > 0 ? doctors.get(doctorIndex - 1).getDoctorId() : null;
 
-            if (controller.createAppointment(currentUser, groupId, appointmentTime, doctorId)) {
+            Appointment newAppointment = controller.createAppointment(currentUser, groupId, appointmentTime, doctorId);
+            if (newAppointment != null) {
                 JOptionPane.showMessageDialog(timeDialog, "预约成功!", "成功", JOptionPane.INFORMATION_MESSAGE);
 
                 int option = JOptionPane.showConfirmDialog(
@@ -380,7 +413,7 @@ public class AppointmentView {
                         JOptionPane.QUESTION_MESSAGE);
 
                 if (option == JOptionPane.YES_OPTION) {
-                    showPaymentDialog(groupId);
+                    showPaymentDialog(newAppointment.getId());
                 } else {
                     JOptionPane.showMessageDialog(timeDialog, "您可稍后支付，请注意支付截止时间", "提示",
                             JOptionPane.INFORMATION_MESSAGE);

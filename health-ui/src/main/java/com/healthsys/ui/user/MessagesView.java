@@ -2,6 +2,7 @@ package com.healthsys.ui.user;
 
 import com.healthsys.service.AppointmentService;
 import com.healthsys.common.entity.Users;
+import com.healthsys.common.entity.Appointment;
 import com.healthsys.common.entity.CheckItemGroup;
 import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
@@ -210,7 +211,8 @@ public class MessagesView {
             int doctorIndex = doctorCombo.getSelectedIndex();
             Long doctorId = doctorIndex > 0 ? doctors.get(doctorIndex - 1).getDoctorId() : null;
 
-            if (controller.createAppointment(currentUser, groupId, appointmentTime, doctorId)) {
+            Appointment newAppointment = controller.createAppointment(currentUser, groupId, appointmentTime, doctorId);
+            if (newAppointment != null) {
                 JOptionPane.showMessageDialog(timeDialog, "预约成功!", "成功", JOptionPane.INFORMATION_MESSAGE);
                 timeDialog.dispose();
                 int payOption = JOptionPane.showConfirmDialog(
