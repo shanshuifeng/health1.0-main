@@ -111,10 +111,10 @@ public class ReportPanel extends JPanel {
         table.setRowHeight(36);
         table.setSelectionBackground(new Color(220, 230, 250));
         table.setSelectionForeground(Color.BLACK);
-        table.setGridColor(new Color(220, 220, 220));
+        table.setGridColor(new Color(190, 190, 190));
         table.getTableHeader().setBackground(new Color(240, 240, 240));
         table.setShowGrid(true);
-        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setIntercellSpacing(new Dimension(1, 1));
 
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
