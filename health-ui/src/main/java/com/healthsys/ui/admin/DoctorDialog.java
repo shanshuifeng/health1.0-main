@@ -13,7 +13,7 @@ public class DoctorDialog extends JDialog {
     private Doctor doctor;
 
     private JTextField usernameField;
-    private JPasswordField passwordField;
+    private JTextField passwordField;
     private JTextField nameField;
     private JTextField departmentField;
     private JTextField titleField;
@@ -87,8 +87,8 @@ public class DoctorDialog extends JDialog {
         return field;
     }
 
-    private JPasswordField createStyledPasswordField() {
-        JPasswordField field = new JPasswordField();
+    private JTextField createStyledPasswordField() {
+        JTextField field = new JTextField(doctor.getPasswordHash() != null ? doctor.getPasswordHash() : "");
         field.setFont(new Font("微软雅黑", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220)),
@@ -115,8 +115,9 @@ public class DoctorDialog extends JDialog {
 
     public Doctor getDoctor() {
         doctor.setUsername(usernameField.getText().trim());
-        if (passwordField.getPassword().length > 0) {
-            doctor.setPasswordHash(new String(passwordField.getPassword()));
+        String pwd = passwordField.getText();
+        if (pwd != null && !pwd.isEmpty()) {
+            doctor.setPasswordHash(pwd);
         }
         doctor.setName(nameField.getText().trim());
         doctor.setDepartment(departmentField.getText().trim());

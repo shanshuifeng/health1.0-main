@@ -165,7 +165,7 @@ public class UserPanel extends CrudPanel<Users> {
     }
 
     private class UserTableModel extends AbstractTableModel {
-        private String[] columnNames = {"ID", "手机号", "姓名", "性别", "角色", "身份证号", "创建时间"};
+        private String[] columnNames = {"ID", "电话", "姓名", "性别", "出生日期", "密码", "身份证号", "创建时间"};
         private List<Users> data;
 
         public void setData(List<Users> data) {
@@ -195,9 +195,10 @@ public class UserPanel extends CrudPanel<Users> {
                 case 1: return user.getPhone();
                 case 2: return user.getName();
                 case 3: return user.getGenderDisplay();
-                case 4: return "—";
-                case 5: return user.getIdNumber();
-                case 6: return user.getCreatedAt();
+                case 4: return user.getBirthDate();
+                case 5: return user.getPassword();
+                case 6: return user.getIdNumber();
+                case 7: return user.getCreatedAt();
                 default: return null;
             }
         }

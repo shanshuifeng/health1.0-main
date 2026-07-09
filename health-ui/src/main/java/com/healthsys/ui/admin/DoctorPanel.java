@@ -156,7 +156,7 @@ public class DoctorPanel extends CrudPanel<Doctor> {
     }
 
     private class DoctorTableModel extends AbstractTableModel {
-        private final String[] columnNames = {"ID", "登录名", "姓名", "科室", "职称", "状态", "创建时间"};
+        private final String[] columnNames = {"ID", "登录名", "密码", "姓名", "科室", "职称", "状态", "创建时间"};
         private List<Doctor> data;
 
         public void setData(List<Doctor> data) {
@@ -188,11 +188,12 @@ public class DoctorPanel extends CrudPanel<Doctor> {
             return switch (columnIndex) {
                 case 0 -> doctor.getDoctorId();
                 case 1 -> doctor.getUsername();
-                case 2 -> doctor.getName();
-                case 3 -> doctor.getDepartment();
-                case 4 -> doctor.getTitle();
-                case 5 -> doctor.getStatusDisplay();
-                case 6 -> doctor.getCreatedAt();
+                case 2 -> doctor.getPasswordHash();
+                case 3 -> doctor.getName();
+                case 4 -> doctor.getDepartment();
+                case 5 -> doctor.getTitle();
+                case 6 -> doctor.getStatusDisplay();
+                case 7 -> doctor.getCreatedAt();
                 default -> null;
             };
         }
