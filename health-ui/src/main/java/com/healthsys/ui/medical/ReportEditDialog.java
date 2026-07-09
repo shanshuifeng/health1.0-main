@@ -131,8 +131,15 @@ public class ReportEditDialog extends JDialog {
         if (fixedAppointmentId != null) {
             Appointment a = appointmentDAO.getById(fixedAppointmentId);
             availableAppointments = a != null ? List.of(a) : List.of();
-        } else {
+        } else if (existingReport != null) {
+            // 编辑模式：显示全部已完成预约
             availableAppointments = appointmentDAO.searchByFilters(doctorId, null, null, "COMPLETED");
+        } else {
+            // 撰写模式：只显示未撰写报告的已完成预约
+            availableAppointments = appointmentDAO.searchByFilters(doctorId, null, null, "COMPLETED")
+                    .stream()
+                    .filter(a -> !Boolean.TRUE.equals(a.getHasReport()))
+                    .toList();
         }
         appointmentCombo.removeAllItems();
         for (Appointment a : availableAppointments) {
@@ -163,19 +170,48 @@ public class ReportEditDialog extends JDialog {
             examInfoArea.setText("暂无检查结果");
             return;
         }
+
+        // 获取检查组项目以取得参考范围和单位
+        Appointment appt = appointmentDAO.getAppointmentById(appointmentId);
+        List<CheckItem> items = appt != null && appt.getGroupId() != null
+                ? appointmentService.getCheckItemsByGroupId(appt.getGroupId()) : List.of();
+        java.util.Map<Long, CheckItem> itemMap = new java.util.HashMap<>();
+        for (CheckItem item : items) {
+            itemMap.put(item.getId(), item);
+        }
+
+        int abnormalCount = 0;
         StringBuilder sb = new StringBuilder();
         for (ExamRecord r : records) {
+            CheckItem item = itemMap.get(r.getItemId());
             sb.append("● ").append(r.getItemName() != null ? r.getItemName() : "项目#" + r.getItemId())
               .append("：").append(r.getResultValue() != null ? r.getResultValue() : "-");
+
+            // 单位和参考范围
+            if (item != null) {
+                if (item.getUnit() != null && !item.getUnit().isEmpty() && !"-".equals(item.getUnit())) {
+                    sb.append(" ").append(item.getUnit());
+                }
+                if (item.getReferenceRange() != null && !item.getReferenceRange().isEmpty()) {
+                    sb.append(" （参考：").append(item.getReferenceRange()).append("）");
+                }
+            }
+
+            // 异常标记
             if (r.getIsAbnormal() != null && r.getIsAbnormal()) {
                 sb.append(" 【异常】");
+                abnormalCount++;
             }
+            // 医生备注
             if (r.getDoctorNote() != null && !r.getDoctorNote().isEmpty()) {
-                sb.append(" （").append(r.getDoctorNote()).append("）");
+                sb.append("\n    备注：").append(r.getDoctorNote());
             }
             sb.append("\n");
         }
-        examInfoArea.setText(sb.toString());
+
+        // 顶部摘要
+        String header = "共 " + records.size() + " 项检查，异常 " + abnormalCount + " 项\n\n";
+        examInfoArea.setText(header + sb.toString());
         examInfoArea.setCaretPosition(0);
     }
 
@@ -314,7 +350,9 @@ public class ReportEditDialog extends JDialog {
     public int showDialog() {
         if (fixedAppointmentId == null && availableAppointments.isEmpty()) {
             JOptionPane.showMessageDialog(getOwner(),
-                "当前没有已完成的预约。\n请先在「预约管理」中完成体检并录入检查结果。",
+                existingReport != null
+                    ? "当前没有已完成的预约。\n请先在「预约管理」中完成体检并录入检查结果。"
+                    : "当前没有待撰写报告的已完成预约。\n已全部撰写完毕或请先在「预约管理」中完成体检。",
                 "无可选预约", JOptionPane.INFORMATION_MESSAGE);
             return CANCEL_OPTION;
         }
