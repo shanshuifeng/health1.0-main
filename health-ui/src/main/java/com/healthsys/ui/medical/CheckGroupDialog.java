@@ -42,6 +42,7 @@ public class CheckGroupDialog extends JDialog {
     private JList<CheckItem>  itemList;
     private DefaultListModel<CheckItem> fullModel;       // 始终持有全部检查项
     private Set<Long>         preservedSelectionIds;     // 过滤时保留的选中 ID
+    private boolean           updatingSelection;         // 程序化更新标志
     private JLabel            selectedCountLabel;
     private JTextField        itemFilterField;
 
@@ -116,10 +117,13 @@ public class CheckGroupDialog extends JDialog {
         priceLabel.setFont(LABEL_FONT);
         row.add(priceLabel, rg);
 
-        // 价格输入框 - 固定宽度
+        // 价格输入框 - 自动累加，只读
         rg.gridx = 1;
         rg.weightx = 0.4;
-        priceField = field(checkItemGroup.getPrice() != null ? checkItemGroup.getPrice().toString() : "");
+        priceField = field("0.00");
+        priceField.setEditable(false);
+        priceField.setBackground(new Color(240, 240, 240));
+        priceField.setForeground(new Color(100, 100, 100));
         priceField.setPreferredSize(new Dimension(100, 32));
         row.add(priceField, rg);
 
@@ -217,8 +221,13 @@ public class CheckGroupDialog extends JDialog {
         allBtn.setBackground(Color.WHITE);
         allBtn.setFocusPainted(false);
         allBtn.addActionListener(e -> {
-            itemList.setSelectionInterval(0, itemList.getModel().getSize() - 1);
-            syncPreservedFromSelection();
+            ListModel<CheckItem> model = itemList.getModel();
+            for (int i = 0; i < model.getSize(); i++) {
+                preservedSelectionIds.add(model.getElementAt(i).getItemId());
+            }
+            applyPreservedToSelection();
+            updatePriceFromSelection();
+            updateCount();
         });
         actions.add(allBtn);
 
@@ -229,6 +238,7 @@ public class CheckGroupDialog extends JDialog {
         noneBtn.addActionListener(e -> {
             itemList.clearSelection();
             preservedSelectionIds.clear();
+            updatePriceFromSelection();
             updateCount();
         });
         actions.add(noneBtn);
@@ -240,11 +250,26 @@ public class CheckGroupDialog extends JDialog {
         fullModel = new DefaultListModel<>();
         for (CheckItem it : new CheckItemDAO().getAll()) fullModel.addElement(it);
         itemList = new JList<>(fullModel);
-        itemList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         itemList.setVisibleRowCount(10);
         itemList.setFixedCellHeight(34);
         itemList.setBackground(Color.WHITE);
         itemList.setCellRenderer(new CheckItemRenderer());
+
+        // 屏蔽 JList 的默认鼠标选择行为，只允许 applyPreservedToSelection() 控制选中
+        itemList.setSelectionModel(new DefaultListSelectionModel() {
+            @Override
+            public void setSelectionInterval(int index0, int index1) {
+                if (updatingSelection) super.setSelectionInterval(index0, index1);
+            }
+            @Override
+            public void addSelectionInterval(int index0, int index1) {
+                if (updatingSelection) super.addSelectionInterval(index0, index1);
+            }
+            @Override
+            public void removeSelectionInterval(int index0, int index1) {
+                if (updatingSelection) super.removeSelectionInterval(index0, index1);
+            }
+        });
 
         JScrollPane listScroll = new JScrollPane(itemList);
         listScroll.setPreferredSize(new Dimension(0, 280));
@@ -258,11 +283,32 @@ public class CheckGroupDialog extends JDialog {
         selectedCountLabel.setFont(new Font("微软雅黑", Font.PLAIN, 12));
         selectedCountLabel.setForeground(new Color(120, 120, 120));
         footer.add(selectedCountLabel, BorderLayout.WEST);
-        JLabel hint = new JLabel("Ctrl+点击多选  Shift+点击范围选择");
+        JLabel hint = new JLabel("点击右侧「选择」按钮关联检查项  |  价格自动累加");
         hint.setFont(new Font("微软雅黑", Font.PLAIN, 11));
         hint.setForeground(new Color(170, 170, 170));
         footer.add(hint, BorderLayout.EAST);
         card.add(footer, BorderLayout.SOUTH);
+
+        // ── 点击按钮区域切换选择 ──
+        itemList.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                int idx = itemList.locationToIndex(e.getPoint());
+                if (idx < 0) return;
+                // 只响应右侧按钮区域（JList 右边缘 80px 内）
+                int btnZoneStart = itemList.getWidth() - 80;
+                if (e.getX() < btnZoneStart) return;
+                CheckItem clicked = itemList.getModel().getElementAt(idx);
+                if (preservedSelectionIds.contains(clicked.getItemId())) {
+                    preservedSelectionIds.remove(clicked.getItemId());
+                } else {
+                    preservedSelectionIds.add(clicked.getItemId());
+                }
+                applyPreservedToSelection();
+                updatePriceFromSelection();
+                updateCount();
+            }
+        });
 
         // ── 搜索过滤（关键修复：保存→过滤→恢复选中） ──
         itemFilterField.getDocument().addDocumentListener(new DocumentListener() {
@@ -271,19 +317,13 @@ public class CheckGroupDialog extends JDialog {
             public void insertUpdate(DocumentEvent e)  { applyFilter(); }
         });
 
-        itemList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                syncPreservedFromSelection();
-                updateCount();
-            }
-        });
-
         // ── 编辑模式预选 ──
         if (checkItemGroup.getId() != null) {
             try {
                 List<CheckItem> existing = new CheckItemGroupDAO().getCheckItemsByGroup(checkItemGroup.getId());
                 for (CheckItem ex : existing) preservedSelectionIds.add(ex.getItemId());
                 applyPreservedToSelection();
+                updatePriceFromSelection();
             } catch (Exception ignored) {}
         }
 
@@ -343,22 +383,36 @@ public class CheckGroupDialog extends JDialog {
         }
     }
 
-    /** 根据 preservedSelectionIds 恢复列表选中 */
+    /** 根据 preservedSelectionIds 刷新列表选中状态（仅此方法可改变 JList 选中） */
     private void applyPreservedToSelection() {
         ListModel<CheckItem> model = itemList.getModel();
-        List<Integer> indices = new ArrayList<>();
-        for (int i = 0; i < model.getSize(); i++) {
-            if (preservedSelectionIds.contains(model.getElementAt(i).getItemId())) {
-                indices.add(i);
+        updatingSelection = true;
+        try {
+            itemList.clearSelection();
+            for (int i = 0; i < model.getSize(); i++) {
+                if (preservedSelectionIds.contains(model.getElementAt(i).getItemId())) {
+                    itemList.addSelectionInterval(i, i);
+                }
             }
+        } finally {
+            updatingSelection = false;
         }
-        if (!indices.isEmpty()) {
-            itemList.setSelectedIndices(indices.stream().mapToInt(Integer::intValue).toArray());
-        }
+        itemList.repaint();
     }
 
     private void updateCount() {
         selectedCountLabel.setText("已选: " + preservedSelectionIds.size() + " 项");
+    }
+
+    private void updatePriceFromSelection() {
+        double total = 0.0;
+        for (int i = 0; i < fullModel.size(); i++) {
+            CheckItem ci = fullModel.get(i);
+            if (preservedSelectionIds.contains(ci.getItemId())) {
+                total += (ci.getPrice() != null ? ci.getPrice() : 0.0);
+            }
+        }
+        priceField.setText(String.format("%.2f", total));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -399,30 +453,38 @@ public class CheckGroupDialog extends JDialog {
     }
 
     private static class CheckItemRenderer extends DefaultListCellRenderer {
+        // 按钮颜色
+        private static final Color BTN_SELECT   = new Color(70, 104, 197);   // 蓝色-选择
+        private static final Color BTN_CANCEL   = new Color(220, 80, 80);    // 红色-取消
+        private static final Color BG_SELECTED  = new Color(60, 95, 190);    // 选中行背景
+
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean selected, boolean focused) {
-            JPanel row = new JPanel(new BorderLayout(12, 0));
-            row.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 12));
-            row.setBackground(selected ? PRIMARY : (index % 2 == 0 ? Color.WHITE : new Color(248, 249, 252)));
+            JPanel row = new JPanel(new BorderLayout(8, 0));
+            row.setBorder(BorderFactory.createEmptyBorder(2, 10, 2, 6));
 
             CheckItem it = (CheckItem) value;
 
+            // 选中：深蓝底白字；未选中：交替行色
+            Color bg = selected ? BG_SELECTED : (index % 2 == 0 ? Color.WHITE : new Color(248, 249, 252));
+            row.setBackground(bg);
+
+            Color nameColor = selected ? Color.WHITE : new Color(50, 50, 50);
+            Color codeColor = selected ? new Color(200, 220, 255) : new Color(150, 150, 150);
+            Color catColor  = selected ? new Color(180, 200, 240) : new Color(170, 170, 170);
+
             JLabel nameLbl = new JLabel(it.getItemName());
             nameLbl.setFont(new Font("微软雅黑", Font.BOLD, 13));
-            nameLbl.setForeground(selected ? Color.WHITE : new Color(50, 50, 50));
+            nameLbl.setForeground(nameColor);
 
             JLabel codeLbl = new JLabel(it.getCode());
             codeLbl.setFont(new Font("微软雅黑", Font.PLAIN, 11));
-            codeLbl.setForeground(selected ? new Color(220, 230, 255) : new Color(150, 150, 150));
+            codeLbl.setForeground(codeColor);
 
             JLabel catLbl = new JLabel(it.getCategory() != null ? it.getCategory() : "");
             catLbl.setFont(new Font("微软雅黑", Font.PLAIN, 11));
-            catLbl.setForeground(selected ? new Color(200, 210, 240) : new Color(170, 170, 170));
-
-            JLabel priceLbl = new JLabel(String.format("¥%.2f", it.getPrice()));
-            priceLbl.setFont(new Font("微软雅黑", Font.PLAIN, 12));
-            priceLbl.setForeground(selected ? new Color(200, 255, 200) : SUCCESS);
+            catLbl.setForeground(catColor);
 
             JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
             left.setOpaque(false);
@@ -430,13 +492,37 @@ public class CheckGroupDialog extends JDialog {
             left.add(codeLbl);
             left.add(catLbl);
 
-            // 垂直居中
+            // 右侧：价格 + 选择/取消按钮
+            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+            right.setOpaque(false);
+
+            JLabel priceLbl = new JLabel(String.format("¥%.2f", it.getPrice()));
+            priceLbl.setFont(new Font("微软雅黑", Font.PLAIN, 12));
+            priceLbl.setForeground(selected ? new Color(180, 255, 180) : SUCCESS);
+            right.add(priceLbl);
+
+            // 按钮-label（模拟按钮外观）
+            JLabel btnLbl = new JLabel(selected ? "取消" : "选择");
+            btnLbl.setFont(new Font("微软雅黑", Font.BOLD, 11));
+            btnLbl.setOpaque(true);
+            btnLbl.setHorizontalAlignment(SwingConstants.CENTER);
+            btnLbl.setPreferredSize(new java.awt.Dimension(60, 24));
+            if (selected) {
+                btnLbl.setBackground(BTN_CANCEL);
+                btnLbl.setForeground(Color.WHITE);
+            } else {
+                btnLbl.setBackground(BTN_SELECT);
+                btnLbl.setForeground(Color.WHITE);
+            }
+            btnLbl.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
+            right.add(btnLbl);
+
             JPanel centerWrap = new JPanel(new GridBagLayout());
             centerWrap.setOpaque(false);
             centerWrap.add(left);
 
             row.add(centerWrap, BorderLayout.CENTER);
-            row.add(priceLbl, BorderLayout.EAST);
+            row.add(right, BorderLayout.EAST);
             return row;
         }
     }
