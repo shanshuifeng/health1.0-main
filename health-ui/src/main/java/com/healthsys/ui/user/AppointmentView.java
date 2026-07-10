@@ -261,10 +261,16 @@ public class AppointmentView {
 
         java.util.List<com.healthsys.common.entity.Doctor> doctors = new com.healthsys.dao.DoctorDAO().getAll();
         JComboBox<String> doctorCombo = new JComboBox<>();
-        doctorCombo.addItem("不指定");
-        for (com.healthsys.common.entity.Doctor d : doctors) {
+        // 默认选中张伟(d001)，去掉"不指定"选项
+        int defaultIndex = 0;
+        for (int i = 0; i < doctors.size(); i++) {
+            com.healthsys.common.entity.Doctor d = doctors.get(i);
             doctorCombo.addItem(d.getName() + " - " + d.getDepartment() + " - " + d.getTitle());
+            if ("d001".equals(d.getUsername())) {
+                defaultIndex = i;
+            }
         }
+        doctorCombo.setSelectedIndex(defaultIndex);
         gbc.gridx = 1;
         panel.add(doctorCombo, gbc);
 
@@ -303,7 +309,7 @@ public class AppointmentView {
             Date appointmentTime = Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
 
             int doctorIndex = doctorCombo.getSelectedIndex();
-            Long doctorId = doctorIndex > 0 ? doctors.get(doctorIndex - 1).getDoctorId() : null;
+            Long doctorId = doctors.get(doctorIndex).getDoctorId();
 
             Appointment newAppointment = controller.createAppointment(currentUser, groupId, appointmentTime, doctorId);
             if (newAppointment != null) {
