@@ -4,7 +4,6 @@ import com.healthsys.dao.UserDAO;
 import com.healthsys.dao.DoctorDAO;
 import com.healthsys.common.entity.Users;
 import com.healthsys.common.entity.Doctor;
-import com.healthsys.common.util.PasswordUtil;
 
 import java.util.List;
 
@@ -27,7 +26,7 @@ public class UserService {
     }
 
     public boolean resetUserPassword(Long userId) {
-        return userDAO.updateUserPasswordHash(userId, PasswordUtil.hash("123456"));
+        return userDAO.updateUserPasswordHash(userId, "123456");
     }
 
     // 兼容旧代码（返回类型变了，但旧调用者需要调整）

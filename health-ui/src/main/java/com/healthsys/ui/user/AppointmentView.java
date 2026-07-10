@@ -362,13 +362,14 @@ public class AppointmentView {
             JButton button = new JButton(label);
             button.addActionListener(e -> {
                 Long appointmentId = getAppointmentIdFromRow(row);
-                if (appointmentId != null && controller.cancelAppointment(appointmentId)) {
+                boolean success = appointmentId != null && controller.cancelAppointment(appointmentId);
+                fireEditingStopped();
+                if (success) {
                     JOptionPane.showMessageDialog(table, "预约已取消", "成功", JOptionPane.INFORMATION_MESSAGE);
                     refreshAppointmentData();
                 } else {
                     JOptionPane.showMessageDialog(table, "取消失败", "错误", JOptionPane.ERROR_MESSAGE);
                 }
-                fireEditingStopped();
             });
             return button;
         }

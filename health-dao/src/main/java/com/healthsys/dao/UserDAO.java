@@ -53,19 +53,18 @@ public class UserDAO {
     }
 
     public boolean update(Users user) {
-        String sql = "UPDATE users SET phone=?, password_hash=?, real_name=?, id_card=?, gender=?, " +
+        String sql = "UPDATE users SET phone=?, real_name=?, id_card=?, gender=?, " +
                 "birth_date=?, status=?, updated_at=? WHERE user_id=?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getPhone());
-            pstmt.setString(2, (user.getPasswordHash()));
-            pstmt.setString(3, user.getRealName());
-            pstmt.setString(4, user.getIdCard());
-            pstmt.setInt(5, user.getGender() != null ? user.getGender() : 0);
-            pstmt.setObject(6, user.getBirthDate());
-            pstmt.setInt(7, user.getStatus() != null ? user.getStatus() : 1);
-            pstmt.setObject(8, LocalDateTime.now());
-            pstmt.setLong(9, user.getUserId());
+            pstmt.setString(2, user.getRealName());
+            pstmt.setString(3, user.getIdCard());
+            pstmt.setInt(4, user.getGender() != null ? user.getGender() : 0);
+            pstmt.setObject(5, user.getBirthDate());
+            pstmt.setInt(6, user.getStatus() != null ? user.getStatus() : 1);
+            pstmt.setObject(7, LocalDateTime.now());
+            pstmt.setLong(8, user.getUserId());
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }

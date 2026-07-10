@@ -88,7 +88,7 @@ public class DoctorDialog extends JDialog {
     }
 
     private JTextField createStyledPasswordField() {
-        JTextField field = new JTextField(doctor.getPasswordHash() != null ? doctor.getPasswordHash() : "");
+        JTextField field = new JTextField("");
         field.setFont(new Font("微软雅黑", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220)),

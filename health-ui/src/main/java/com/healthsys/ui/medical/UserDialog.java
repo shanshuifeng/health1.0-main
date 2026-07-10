@@ -147,7 +147,7 @@ public class UserDialog extends JDialog {
     }
 
     private JTextField createStyledPasswordField() {
-        JTextField field = new JTextField(user.getPassword());
+        JTextField field = new JTextField("");
         field.setFont(new Font("微软雅黑", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220)),
@@ -174,7 +174,10 @@ public class UserDialog extends JDialog {
 
     public Users getUser() {
         user.setName(nameField.getText().trim());
-        user.setPassword(passwordField.getText());
+        String newPassword = passwordField.getText().trim();
+        if (!newPassword.isEmpty()) {
+            user.setPassword(newPassword);
+        }
         user.setPhone(phoneField.getText().trim());
         // 性别映射："男"/"女" — 与注册表单一致
         String genderStr = (String) genderComboBox.getSelectedItem();

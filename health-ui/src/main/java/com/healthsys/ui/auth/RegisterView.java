@@ -153,7 +153,7 @@ public class RegisterView extends JFrame {
 
             Users newUser = new Users();
             newUser.setName(nameField.getText().trim());
-            newUser.setPassword(com.healthsys.common.util.PasswordUtil.hash(new String(passwordField.getPassword())));
+            newUser.setPassword(new String(passwordField.getPassword()));
             newUser.setStatus(1);
             newUser.setFirstLogin(false);
 
