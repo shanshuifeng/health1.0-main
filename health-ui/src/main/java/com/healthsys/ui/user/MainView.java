@@ -441,13 +441,13 @@ class AboutView {
         JLabel title = createSectionTitle("开发团队");
         section.add(title, BorderLayout.NORTH);
 
-        String[] columns = {"成员", "职责"};
+        String[] columns = {"成员", "GitHub", "职责与贡献"};
         Object[][] data = {
-                {"蒋永康", "全栈架构 (19次提交 +8,800行)"},
-                {"陈欣妍", "UI视觉统一 (4次提交 +1,703行)"},
-                {"丁紫岚", "医生端+Bug修复 (25次提交 +1,211行)"},
-                {"慈曾华", "认证安全+支付 (7次提交 +1,573行)"},
-                {"苏贝贝", "注册+登录体验 (5次提交 +321行)"}
+                {"蒋永康", "shanshuifeng", "项目架构+全栈开发 (24次提交 +13,522行)"},
+                {"陈欣妍", "—", "UI视觉统一+主题配色+布局优化 (8次提交 +2,281行)"},
+                {"丁紫岚", "ding-zilan", "医生端功能+Bug修复+表格优化 (28次提交 +2,789行)"},
+                {"慈曾华", "cizenghua", "认证安全+支付修复+功能增强 (16次提交 +1,875行)"},
+                {"苏贝贝", "—", "注册功能+表格优化+登录体验 (7次提交 +421行)"}
         };
 
         JTable table = createStyledTable(columns, data, data.length);
@@ -597,7 +597,11 @@ class AboutView {
         });
 
         // 列宽分配
-        if (columns.length == 2) {
+        if (columns.length == 3) {
+            table.getColumnModel().getColumn(0).setPreferredWidth(80);
+            table.getColumnModel().getColumn(1).setPreferredWidth(120);
+            table.getColumnModel().getColumn(2).setPreferredWidth(320);
+        } else if (columns.length == 2) {
             table.getColumnModel().getColumn(0).setPreferredWidth(100);
             table.getColumnModel().getColumn(1).setPreferredWidth(400);
         }
