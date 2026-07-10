@@ -11,24 +11,36 @@ import java.util.List;
 public class ReportDAO {
 
     public Report getByAppointmentId(Long appointmentId) {
-        String sql = "SELECT * FROM reports WHERE appointment_id = ?";
+        String sql = "SELECT r.*, d.name as doctor_name FROM reports r " +
+                "LEFT JOIN doctors d ON r.doctor_id = d.doctor_id " +
+                "WHERE r.appointment_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, appointmentId);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next()) {
+                    Report r = mapRow(rs);
+                    r.setDoctorName(rs.getString("doctor_name"));
+                    return r;
+                }
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return null;
     }
 
     public Report getById(Long id) {
-        String sql = "SELECT * FROM reports WHERE report_id = ?";
+        String sql = "SELECT r.*, d.name as doctor_name FROM reports r " +
+                "LEFT JOIN doctors d ON r.doctor_id = d.doctor_id " +
+                "WHERE r.report_id = ?";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setLong(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next()) {
+                    Report r = mapRow(rs);
+                    r.setDoctorName(rs.getString("doctor_name"));
+                    return r;
+                }
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return null;
